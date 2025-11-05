@@ -79,7 +79,7 @@ The application will open in your browser at `http://localhost:8501`
 
 ## 🎥 Project Demo
 Click below to watch the video demo 👇  
-[![AI SQL Generation Agent Demo](https://img.shields.io/badge/Watch%20Demo-Click%20Here-blue?style=for-the-badge)](https://github.com/rohith0707/GenQuery-AI/blob/main/AI%20SQL%20Generation%20Agent.mp4?raw=true)
+[![AI SQL Generation Agent Demo](https://img.shields.io/badge/Watch%20Demo-Click%20Here-blue?style=for-the-badge)](https://github.com/rohith0707/GenQuery-AI/blob/main/AI%20SQL%20Generation%20Agent.mp4)
 
 
 
