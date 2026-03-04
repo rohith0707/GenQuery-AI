@@ -1,15 +1,20 @@
-# SQL Generation LLM - Generative SQL Intelligence
+# GenQuery-AI — Generative SQL Intelligence
 
-A production-ready Streamlit application that translates natural language questions into optimized Snowflake SQL queries using OpenAI's language models.
+A production-ready Streamlit application that translates natural language questions into optimized Snowflake SQL queries using **8 LLM providers** — including fully free, local options (Ollama, LM Studio) — with RAG-powered learning, feedback telemetry, and an admin analytics dashboard.
 
 ## 🌟 Features
 
 ### Core Capabilities
 - **Natural Language to SQL**: Ask analytical questions in plain English, get Snowflake-optimized SQL
+- **Multi-LLM Support**: OpenAI, Anthropic Claude, Google Gemini, LLaMA (HF/Groq), Together AI, Ollama (local), LM Studio (local) — with automatic fallback
+- **RAG Engine**: Vector-based schema indexing, semantic query caching, few-shot example retrieval, and conversation memory via ChromaDB
 - **Query Optimization**: AI-powered optimization to reduce query complexity and execution time
 - **Safe Read-Only Execution**: Automatic validation ensures only SELECT/WITH queries are executed
-- **Intelligent Schema Introspection**: Automatic database schema discovery for better query accuracy
-- **Interactive Data Visualization**: Built-in charts (Bar, Line, Area, Time Series, Heatmaps)
+- **Intelligent Schema Introspection**: Automatic database schema discovery (up to 60 tables, 50 columns each)
+- **Interactive Data Visualization**: Built-in charts (Bar, Line, Area, Time Series, Heatmaps, Custom Builder)
+- **Feedback & Telemetry**: Thumbs-up/down ratings, query logging with provider/latency tracking (SQLite-backed)
+- **Admin Dashboard**: Real-time query telemetry, feedback analytics, and system health monitoring
+- **Streaming SQL Generation**: Real-time token-by-token display for Ollama and compatible providers
 - **Query History**: Track and review recent queries with execution statistics
 - **Error Recovery**: Smart table name suggestion and automatic query regeneration on failures
 
@@ -31,8 +36,8 @@ A production-ready Streamlit application that translates natural language questi
 
 1. **Clone the repository**
 ```bash
-git clone <repository-url>
-cd SQL_Generation_LLM
+git clone https://github.com/rohith0707/GenQuery-AI.git
+cd GenQuery-AI
 ```
 
 2. **Create virtual environment**
@@ -54,10 +59,20 @@ pip install -r requirements.txt
 4. **Configure environment variables**
 Create a `.env` file in the project root:
 ```env
-# OpenAI Configuration
+# ── LLM Providers (at least one required) ──────────────────
+# Paid / Cloud
 OPENAI_API_KEY=sk-your-openai-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-key          # Claude models
+GEMINI_API_KEY=your-google-gemini-key         # or GOOGLE_API_KEY
+HF_API_KEY=your-huggingface-key               # LLaMA via HuggingFace
+GROQ_API_KEY=your-groq-key                    # LLaMA via Groq
+TOGETHER_API_KEY=your-together-key            # Free $25 credits at together.ai
 
-# Snowflake Configuration
+# Free & Local (no key needed — just run the server)
+OLLAMA_BASE_URL=http://localhost:11434        # default
+LMSTUDIO_BASE_URL=http://localhost:1234       # default
+
+# ── Snowflake Configuration ─────────────────────────────────
 SNOWFLAKE_USER=your_username
 SNOWFLAKE_PASSWORD=your_password
 SNOWFLAKE_ACCOUNT=orgname-account.region
@@ -66,7 +81,14 @@ SNOWFLAKE_DATABASE=your_database
 SNOWFLAKE_SCHEMA=your_schema
 SNOWFLAKE_ROLE=READ_ONLY_ROLE
 
-# Query Limits
+# ── RAG Engine (optional) ──────────────────────────────────
+RAG_ENABLED=true
+RAG_EMBEDDING_MODEL=text-embedding-3-small    # or sentence-transformers fallback
+RAG_CACHE_THRESHOLD=0.90
+RAG_SCHEMA_TOP_K=5
+RAG_FEW_SHOT_TOP_K=3
+
+# ── Query Limits ────────────────────────────────────────────
 MAX_QUERY_ROWS=5000
 ```
 
@@ -132,66 +154,101 @@ For detailed information, see [`QUERY_OPTIMIZATION_GUIDE.md`](QUERY_OPTIMIZATION
 
 ### Project Structure
 ```
-SQL_Generation_LLM/
+GenQuery-AI/
 ├── app.py                          # Main Streamlit application
-├── langchain_agent.py              # SQL generation & optimization logic
+├── langchain_agent.py              # Multi-LLM SQL generation & optimization
+├── rag_engine.py                   # RAG pipeline (ChromaDB vector store)
 ├── snowflake_client.py             # Snowflake connection & execution
 ├── sql_validator.py                # Safety validation & sanitization
+├── feedback_store.py               # SQLite telemetry & feedback logging
 ├── utils.py                        # Utilities & logging
 ├── ui_styles.py                    # CSS styling
 ├── design_tokens.py                # Design system tokens
+├── reset_app.py                    # Session state reset utility
+├── test_app.py                     # Integration tests
 ├── pages/
-│   └── Query_Optimization.py       # Query optimization page
+│   ├── Landing.py                  # Animated landing page
+│   ├── Query_Optimization.py       # Query optimization page
+│   └── Admin_Dashboard.py          # Telemetry & analytics dashboard
 ├── ui/
 │   └── components.py               # Reusable UI components
+├── rag_store/                      # ChromaDB persistent vector store
+├── ARCHITECTURE.md                 # System architecture documentation
 ├── requirements.txt                # Python dependencies
 ├── .env                            # Environment configuration (not committed)
+├── .gitignore                      # Git ignore rules
 └── README.md                       # This file
 ```
 
 ### Technology Stack
 - **Frontend**: Streamlit, Altair (visualizations)
 - **Backend**: Python 3.8+
-- **Database**: Snowflake
-- **AI/ML**: OpenAI API (GPT-4o-mini, GPT-3.5-turbo)
+- **Database**: Snowflake (query execution), SQLite (telemetry & feedback)
+- **Vector Store**: ChromaDB (persistent, local) for RAG pipeline
+- **Embeddings**: OpenAI `text-embedding-3-small` (primary), `sentence-transformers/all-MiniLM-L6-v2` (fallback)
+- **AI/ML — 8 LLM Providers**:
+  - **Paid / Cloud**: OpenAI, Anthropic Claude, Google Gemini, LLaMA (HF/Groq), Together AI
+  - **Free & Local**: Ollama, LM Studio
 - **Libraries**: 
-  - LangChain (SQL generation with schema introspection)
+  - LangChain + langchain-community + langchain-openai (SQL generation)
+  - anthropic, google-generativeai, huggingface-hub, groq (multi-provider)
+  - chromadb, sentence-transformers (RAG & embeddings)
   - pandas (data manipulation)
   - sqlparse (SQL parsing)
   - tenacity (retry logic)
 
 ### Key Components
 
-#### 1. SQL Generation ([`langchain_agent.py`](langchain_agent.py))
-- **Primary Method**: OpenAI Responses API with GPT-4o-mini
-- **Fallback**: Chat Completions API with GPT-3.5-turbo
-- **Legacy Support**: text-davinci-003 for older OpenAI SDK versions
-- **LangChain Integration**: Optional schema-aware generation using SQLDatabase
+#### 1. Multi-LLM SQL Generation ([`langchain_agent.py`](langchain_agent.py))
+- **8 providers** with automatic fallback chain
+- **Streaming generation** — real-time token display for Ollama and compatible providers
+- **In-memory SQL cache** (TTL=1h, max 200 entries) with SHA1 keying
+- **Ollama optimizations** — model auto-selection, background warmup, speed-tuned defaults
+- **Provider health tracking** — status dict with per-provider availability
 
-#### 2. Query Optimization ([`langchain_agent.py`](langchain_agent.py:282-406))
+#### 2. RAG Engine ([`rag_engine.py`](rag_engine.py))
+- **Vector schema indexing** — embeds table metadata into ChromaDB for intelligent retrieval
+- **Semantic query caching** — avoids redundant LLM calls for similar questions (configurable threshold)
+- **Few-shot example retrieval** — provides in-context learning examples from the vector store
+- **Conversation memory** — enables multi-turn query refinement
+- **Dual embedding support** — OpenAI primary, sentence-transformers fallback
+
+#### 3. Query Optimization ([`langchain_agent.py`](langchain_agent.py))
 - LLM-based semantic rewriting
 - Heuristic optimizations for common patterns
 - Safety validation of optimized output
 - Fallback to original query if optimization fails
 
-#### 3. Snowflake Client ([`snowflake_client.py`](snowflake_client.py))
+#### 4. Snowflake Client ([`snowflake_client.py`](snowflake_client.py))
 - Connection pooling with keep-alive
 - Enhanced error messages with table suggestions
-- Schema introspection for up to 40 tables
+- Schema introspection for up to 60 tables, 50 columns each
+- Rich schema export for RAG indexing (`get_rich_schema_for_rag()`)
 - Automatic retry logic with exponential backoff
 
-#### 4. Safety Validation ([`sql_validator.py`](sql_validator.py))
+#### 5. Feedback & Telemetry ([`feedback_store.py`](feedback_store.py))
+- SQLite-backed query logging (provider, latency, row count, cache hits)
+- User feedback capture (thumbs-up/down paired to NL→SQL)
+- Aggregated statistics API for the admin dashboard
+- WAL mode for concurrent write safety
+
+#### 6. Safety Validation ([`sql_validator.py`](sql_validator.py))
 - Comment removal
 - Multi-statement blocking
 - DDL/DML keyword detection
 - SELECT/WITH whitelist enforcement
 
-#### 5. UI Components ([`ui/components.py`](ui/components.py))
+#### 7. UI Components ([`ui/components.py`](ui/components.py))
 - Dark/Light mode support
 - Responsive design
 - Interactive charts (8+ types)
 - Copy-to-clipboard functionality
 - Query history tracking
+
+#### 8. Pages
+- **Landing Page** ([`pages/Landing.py`](pages/Landing.py)) — Animated hero with gradient background, particle effects, and navigation
+- **Query Optimization** ([`pages/Query_Optimization.py`](pages/Query_Optimization.py)) — Side-by-side SQL comparison with structural metrics
+- **Admin Dashboard** ([`pages/Admin_Dashboard.py`](pages/Admin_Dashboard.py)) — Real-time telemetry, feedback analytics, system health, auto-refresh
 
 ## 🎨 UI Features
 
@@ -267,11 +324,21 @@ ORDER BY month
 
 ## 🔧 Configuration
 
-### OpenAI Models
-The application supports multiple OpenAI models with automatic fallback:
-- **Primary**: `gpt-4o-mini` (Responses API) - Fast, cost-effective
-- **Fallback**: `gpt-3.5-turbo` (Chat Completions) - Reliable
-- **Legacy**: `text-davinci-003` (Completion) - Backward compatibility
+### LLM Providers
+The application supports **8 providers** with automatic fallback:
+
+| Provider | Type | Key / Config |
+|----------|------|--------------|
+| OpenAI (GPT-4o-mini) | Paid / Cloud | `OPENAI_API_KEY` |
+| Anthropic (Claude) | Paid / Cloud | `ANTHROPIC_API_KEY` |
+| Google Gemini | Paid / Cloud | `GEMINI_API_KEY` |
+| LLaMA (HuggingFace) | Paid / Cloud | `HF_API_KEY` |
+| LLaMA (Groq) | Paid / Cloud | `GROQ_API_KEY` |
+| Together AI | Free credits | `TOGETHER_API_KEY` |
+| Ollama | Free & Local | `OLLAMA_BASE_URL` (default: localhost:11434) |
+| LM Studio | Free & Local | `LMSTUDIO_BASE_URL` (default: localhost:1234) |
+
+**No API key at all?** Install [Ollama](https://ollama.com) → `ollama pull codellama` — fully local, zero cost.
 
 ### Snowflake Connection
 Configure in `.env`:
@@ -286,9 +353,10 @@ Configure in `.env`:
 
 ## 🐛 Troubleshooting
 
-### "OPENAI_API_KEY not set"
-- Ensure `.env` file exists in project root
-- Verify `OPENAI_API_KEY=sk-...` is correctly set
+### "OPENAI_API_KEY not set" / "All provider attempts failed"
+- You need **at least one** LLM provider configured
+- Easiest free option: install [Ollama](https://ollama.com) and run `ollama pull codellama`
+- Or add any API key (`OPENAI_API_KEY`, `TOGETHER_API_KEY`, etc.) to `.env`
 - Restart the application after updating `.env`
 
 ### "Snowflake account not reachable"
@@ -346,13 +414,18 @@ Application logs are written to `genai_sql_agent.log`:
 ## 🚧 Known Limitations
 
 1. **No Write Operations**: Only SELECT/WITH queries supported
-2. **Schema Discovery Limits**: Maximum 40 tables, 40 columns per table
+2. **Schema Discovery Limits**: Maximum 60 tables, 50 columns per table
 3. **No Query Cost Estimation**: Cannot predict Snowflake compute costs
 4. **LLM Variability**: Results may vary between runs
 5. **No Multi-Database Joins**: Limited to single database/schema context
 
 ## 🗺️ Roadmap
 
+- [x] ~~Multi-LLM provider support~~ ✅
+- [x] ~~Feedback & telemetry system~~ ✅
+- [x] ~~Admin analytics dashboard~~ ✅
+- [x] ~~RAG-powered learning from past queries~~ ✅
+- [x] ~~Streaming SQL generation~~ ✅
 - [ ] Query execution plan visualization
 - [ ] Saved query templates
 - [ ] Multi-database support
@@ -384,12 +457,11 @@ For issues, questions, or feature requests:
 
 ## 📚 Additional Documentation
 
-- [`QUERY_OPTIMIZATION_GUIDE.md`](QUERY_OPTIMIZATION_GUIDE.md) - Detailed query optimization documentation
-- [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) - UI/UX design guidelines (if available)
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) - System architecture documentation
 
 ---
 
 **Built for safe analytical exploration. Add governance, lineage & audit before productionization.**
 
-**Version**: 1.0  
-**Last Updated**: 2025-10-30
+**Version**: 2.0  
+**Last Updated**: 2026-03-04
