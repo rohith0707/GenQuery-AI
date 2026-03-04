@@ -7,8 +7,11 @@ import streamlit as st
 
 from langchain_agent import optimize_sql, get_generation_backend_status
 from sql_validator import sanitize_sql, validate_sql_safe
-from snowflake_client import get_schema_overview, run_query_with_timing
+from snowflake_client import get_schema_overview, run_query_with_timing, SF_PARAMS
 from ui.components import inject_global_styles, render_sidebar, render_header
+
+def _snowflake_configured() -> bool:
+    return all(SF_PARAMS.get(k) for k in ("user", "password", "account"))
 
 # ---- Page Config ----
 st.set_page_config(page_title="Query Optimization", page_icon="🛠", layout="wide")
@@ -169,14 +172,21 @@ st.caption("Paste a Snowflake SELECT / WITH query to receive a performance‑ori
 
 # ---- Auto schema introspection (reuse existing overview if not present) ----
 if st.session_state.auto_schema_text is None:
-    try:
-        st.session_state.auto_schema_text = get_schema_overview()
-    except Exception as e:
+    if _snowflake_configured():
+        try:
+            st.session_state.auto_schema_text = get_schema_overview()
+        except Exception as e:
+            st.session_state.auto_schema_text = None
+            st.caption(f"Schema introspection unavailable: {e}")
+    else:
         st.session_state.auto_schema_text = None
-        st.caption(f"Schema introspection unavailable: {e}")
 
 with st.expander("📘 Schema Overview (introspected)", expanded=False):
-    st.code(st.session_state.auto_schema_text or "(none)", language="text")
+    if _snowflake_configured():
+        st.code(st.session_state.auto_schema_text or "(none)", language="text")
+    else:
+        st.info("Connect Snowflake in `.env` to enable schema auto-introspection. "
+                "You can still optimize queries — paste your schema in the sidebar hint.")
 
 # ---- Input Area ----
 st.markdown("#### Original Query")
@@ -292,7 +302,21 @@ if execute_btn:
     if "original_sql" not in st.session_state or st.session_state.original_sql is None:
         st.warning("Please optimize a query first before comparing execution times.")
         st.stop()
-    
+
+    if not _snowflake_configured():
+        st.warning(
+            "**Demo Mode** \u2014 Snowflake is not connected, so execution benchmarking is unavailable. "
+            "The optimization comparison above shows structural improvements without running queries."
+        )
+        st.info(
+            "To enable execution benchmarking, add credentials to `.env`:\n\n"
+            "```env\nSNOWFLAKE_USER=your_username\nSNOWFLAKE_PASSWORD=your_password\n"
+            "SNOWFLAKE_ACCOUNT=orgname-accountlocator\nSNOWFLAKE_WAREHOUSE=COMPUTE_WH\n"
+            "SNOWFLAKE_DATABASE=MY_DATABASE\nSNOWFLAKE_SCHEMA=PUBLIC\n```\n\n"
+            "Then restart with `streamlit run app.py`."
+        )
+        st.stop()
+
     original = st.session_state.original_sql
     optimized = st.session_state.optimized_sql
     
@@ -311,7 +335,10 @@ if execute_btn:
             with st.expander("View Results"):
                 st.dataframe(orig_df, width="stretch")
         except Exception as e:
-            st.error(f"Original query failed: {e}")
+            err_s = str(e)
+            st.error(f"Original query failed: {err_s}")
+            if "Missing required Snowflake" in err_s:
+                st.info("Add Snowflake credentials to `.env` and restart.")
             orig_time = None
     
     with perf_cols[1]:
@@ -324,7 +351,10 @@ if execute_btn:
             with st.expander("View Results"):
                 st.dataframe(opt_df, width="stretch")
         except Exception as e:
-            st.error(f"Optimized query failed: {e}")
+            err_s = str(e)
+            st.error(f"Optimized query failed: {err_s}")
+            if "Missing required Snowflake" in err_s:
+                st.info("Add Snowflake credentials to `.env` and restart.")
             opt_time = None
     
     # Show performance metrics if both succeeded

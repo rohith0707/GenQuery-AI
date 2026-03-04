@@ -270,3 +270,66 @@ def get_schema_overview(max_tables: int = 40, max_cols_per_table: int = 40) -> s
     except Exception as e:
         enhanced = _enhance_error(e)
         raise RuntimeError(f"Failed to load schema overview: {enhanced}")
+
+
+def get_rich_schema_for_rag(max_tables: int = 60, max_cols_per_table: int = 50) -> list:
+    """
+    Enhanced schema introspection for RAG vector indexing.
+
+    Unlike get_schema_overview() which returns a flat string, this returns
+    structured metadata (table name, column names, data types, nullability)
+    suitable for embedding into a vector store.
+
+    Returns:
+        List of dicts: [{"table_name": ..., "database": ..., "schema": ...,
+                         "columns": [{"name": ..., "type": ..., "nullable": ...}]}]
+    """
+    try:
+        conn = get_connection()
+        with conn.cursor() as cs:
+            db = SF_PARAMS.get("database")
+            sch = SF_PARAMS.get("schema")
+            filters = []
+            if db:
+                filters.append(f"table_catalog = '{db}'")
+            if sch:
+                filters.append(f"table_schema = '{sch}'")
+            where_clause = " WHERE " + " AND ".join(filters) if filters else ""
+            sql = (
+                "SELECT table_name, column_name, data_type, is_nullable "
+                "FROM information_schema.columns"
+                f"{where_clause} "
+                "ORDER BY table_name, ordinal_position"
+            )
+            cs.execute(sql)
+            rows = cs.fetchall()
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+        # Build structured output
+        tables = {}
+        for tbl, col, dtype, nullable in rows:
+            if tbl not in tables:
+                if len(tables) >= max_tables:
+                    continue
+                tables[tbl] = {
+                    "table_name": tbl,
+                    "database": db or "",
+                    "schema": sch or "",
+                    "columns": [],
+                }
+            if len(tables[tbl]["columns"]) < max_cols_per_table:
+                tables[tbl]["columns"].append({
+                    "name": col,
+                    "type": dtype or "",
+                    "nullable": nullable or "YES",
+                })
+
+        result = list(tables.values())
+        logger.info("Rich schema extracted for RAG; tables=%d", len(result))
+        return result
+    except Exception as e:
+        logger.warning("Rich schema extraction failed: %s", e)
+        return []

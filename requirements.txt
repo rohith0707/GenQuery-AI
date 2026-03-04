@@ -24,3 +24,7 @@ tenacity>=8.2.2
 altair>=4.2.0
 python-json-logger>=2.0.4
 requests>=2.31.0
+
+# RAG (Retrieval-Augmented Generation) dependencies
+chromadb>=0.4.0
+sentence-transformers>=2.2.0

@@ -2664,3 +2664,267 @@ openai.RateLimitError: Error code: 429 - {'error': {'message': 'You exceeded you
 2025-11-05 15:46:44,263 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
 2025-11-05 15:46:57,838 | INFO | genai_sql_agent | Opening Snowflake connection user=ROHITH0707 db=ANALYTICS schema=PUBLIC
 2025-11-05 15:47:03,553 | INFO | genai_sql_agent | Schema overview built; tables=4
+2026-02-23 15:26:31,042 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 15:26:32,577 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 15:27:11,502 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 15:27:15,590 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 15:27:28,337 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 15:27:28,339 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 15:28:06,675 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 15:28:07,821 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 15:28:14,359 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 15:28:49,007 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 15:28:52,717 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 15:28:59,695 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 15:31:12,667 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 15:31:18,786 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 15:31:18,792 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 15:31:18,793 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 15:31:20,889 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 15:31:20,960 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 15:31:21,118 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 15:31:21,120 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 15:31:21,120 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 15:31:21,414 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 15:31:21,415 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 15:31:21,415 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 15:36:50,894 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 15:37:31,597 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=0, history=0, time=152.0ms
+2026-02-23 15:37:31,598 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=0, history=0, time=152.0ms
+2026-02-23 15:37:31,598 | ERROR | genai_sql_agent | All provider attempts failed: OpenAI:OPENAI_API_KEY missing
+2026-02-23 15:37:31,602 | ERROR | genai_sql_agent | SQL generation error
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\app.py", line 241, in <module>
+    sql_raw = generate_sql(user_q, schema_text=combined_schema_hint, db_uri=None)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\langchain_agent.py", line 538, in generate_sql
+    raise RuntimeError(f"SQL generation failed across providers. Details: {agg}")
+RuntimeError: SQL generation failed across providers. Details: OpenAI:OPENAI_API_KEY missing
+2026-02-23 15:37:38,117 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=0, history=0, time=48.7ms
+2026-02-23 15:37:38,118 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=0, history=0, time=48.7ms
+2026-02-23 15:37:38,118 | ERROR | genai_sql_agent | All provider attempts failed: OpenAI:OPENAI_API_KEY missing
+2026-02-23 15:37:38,120 | ERROR | genai_sql_agent | SQL generation error
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\app.py", line 241, in <module>
+    sql_raw = generate_sql(user_q, schema_text=combined_schema_hint, db_uri=None)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\langchain_agent.py", line 538, in generate_sql
+    raise RuntimeError(f"SQL generation failed across providers. Details: {agg}")
+RuntimeError: SQL generation failed across providers. Details: OpenAI:OPENAI_API_KEY missing
+2026-02-23 15:39:17,262 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 15:39:27,875 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=1, history=0, time=28.2ms
+2026-02-23 15:39:27,875 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=1, history=0, time=28.2ms
+2026-02-23 15:39:27,875 | ERROR | genai_sql_agent | All provider attempts failed: OpenAI:OPENAI_API_KEY missing
+2026-02-23 15:39:27,877 | ERROR | genai_sql_agent | SQL generation error
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\app.py", line 241, in <module>
+    sql_raw = generate_sql(user_q, schema_text=combined_schema_hint, db_uri=None)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\langchain_agent.py", line 538, in generate_sql
+    raise RuntimeError(f"SQL generation failed across providers. Details: {agg}")
+RuntimeError: SQL generation failed across providers. Details: OpenAI:OPENAI_API_KEY missing
+2026-02-23 15:45:09,338 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 15:45:10,598 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 15:45:17,195 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:12:21,027 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:13:04,202 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=0, history=0, time=36.7ms
+2026-02-23 16:13:04,202 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=0, history=0, time=36.7ms
+2026-02-23 16:13:04,203 | ERROR | genai_sql_agent | All provider attempts failed: OpenAI:OPENAI_API_KEY missing
+2026-02-23 16:13:04,204 | ERROR | genai_sql_agent | SQL generation error
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\app.py", line 273, in <module>
+    sql_raw = generate_sql(user_q, schema_text=combined_schema_hint, db_uri=None)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\langchain_agent.py", line 538, in generate_sql
+    logger.info("Generated SQL via Ollama model=%s", model)
+RuntimeError: SQL generation failed across providers. Details: OpenAI:OPENAI_API_KEY missing
+2026-02-23 16:13:34,410 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:13:39,106 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:13:52,474 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:14:27,817 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 16:14:28,155 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 16:14:28,161 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 16:14:28,162 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:14:43,947 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=2, history=0, time=115.2ms
+2026-02-23 16:14:43,948 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=2, history=0, time=115.2ms
+2026-02-23 16:15:29,498 | INFO | genai_sql_agent | Generated SQL via Ollama model=codellama
+2026-02-23 16:15:29,500 | INFO | genai_sql_agent | SQL generated via free local Ollama
+2026-02-23 16:15:29,507 | INFO | genai_sql_agent | Executing SQL with timing (start): SELECT * FROM customers
+2026-02-23 16:15:29,515 | ERROR | genai_sql_agent | Snowflake query failed: Missing required Snowflake environment variables: user, password, account
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 203, in run_query_with_timing
+    conn = get_connection()
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 65, in get_connection
+    validate_snowflake_config()
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 33, in validate_snowflake_config
+    raise ValueError(
+ValueError: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:15:29,528 | ERROR | genai_sql_agent | Execution error
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\app.py", line 310, in <module>
+    df, exec_time_s = run_query_with_timing(sql_clean)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 217, in run_query_with_timing
+    raise enhanced
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 203, in run_query_with_timing
+    conn = get_connection()
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 65, in get_connection
+    validate_snowflake_config()
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 33, in validate_snowflake_config
+    raise ValueError(
+ValueError: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:17:23,788 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:17:25,025 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:17:25,026 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:17:45,392 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 16:17:46,003 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 16:17:46,009 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 16:17:46,011 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:17:58,759 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=0, history=0, time=47.6ms
+2026-02-23 16:17:58,759 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=0, history=0, time=47.6ms
+2026-02-23 16:18:55,657 | INFO | genai_sql_agent | Generated SQL via Ollama model=codellama
+2026-02-23 16:18:55,659 | INFO | genai_sql_agent | SQL generated via free local Ollama
+2026-02-23 16:21:39,114 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:21:40,469 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:21:48,304 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:22:40,573 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:22:44,557 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:22:56,604 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:23:22,376 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 16:23:23,326 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 16:23:23,338 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 16:23:23,339 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:23:40,331 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=0, history=0, time=109.6ms
+2026-02-23 16:23:40,333 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=0, history=0, time=109.6ms
+2026-02-23 16:24:22,351 | INFO | genai_sql_agent | Generated SQL via Ollama model=codellama
+2026-02-23 16:24:22,353 | INFO | genai_sql_agent | SQL generated via free local Ollama
+2026-02-23 16:26:29,898 | INFO | genai_sql_agent | Optimization via Ollama model=codellama.
+2026-02-23 16:33:04,959 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:33:06,350 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:33:06,351 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:35:13,225 | INFO | genai_sql_agent | Optimization via Ollama model=codellama.
+2026-02-23 16:35:13,228 | INFO | genai_sql_agent | LLM optimization minimal; applying heuristic pass.
+2026-02-23 16:35:44,280 | INFO | genai_sql_agent | Executing SQL with timing (start): SELECT school_name, COUNT(DISTINCT student_id) AS num_students, SUM(CASE WHEN gender = 'M' THEN 1 ELSE 0 END) AS male_students, SUM(CASE WHEN gender = 'F' THEN 1 ELSE 0 END) AS female_students FROM (     SELECT school_name, student_id, gender     FROM orders     JOIN customers ON orders.customer_id 
+2026-02-23 16:35:44,280 | ERROR | genai_sql_agent | Snowflake query failed: Missing required Snowflake environment variables: user, password, account
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 203, in run_query_with_timing
+    conn = get_connection()
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 65, in get_connection
+    validate_snowflake_config()
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 33, in validate_snowflake_config
+    raise ValueError(
+ValueError: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:35:44,287 | INFO | genai_sql_agent | Executing SQL with timing (start): SELECT school_name, COUNT(DISTINCT student_id) AS num_students, SUM(CASE WHEN gender = 'M' THEN 1 ELSE 0 END) AS male_students, SUM(CASE WHEN gender = 'F' THEN 1 ELSE 0 END) AS female_students FROM (     SELECT school_name, student_id, gender     FROM orders     JOIN customers ON orders.customer_id 
+2026-02-23 16:35:44,287 | ERROR | genai_sql_agent | Snowflake query failed: Missing required Snowflake environment variables: user, password, account
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 203, in run_query_with_timing
+    conn = get_connection()
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 65, in get_connection
+    validate_snowflake_config()
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 33, in validate_snowflake_config
+    raise ValueError(
+ValueError: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:35:45,192 | INFO | genai_sql_agent | Executing SQL with timing (start): SELECT school_name, COUNT(DISTINCT student_id) AS num_students, SUM(CASE WHEN gender = 'M' THEN 1 ELSE 0 END) AS male_students, SUM(CASE WHEN gender = 'F' THEN 1 ELSE 0 END) AS female_students FROM (     SELECT school_name, student_id, gender     FROM orders     JOIN customers ON orders.customer_id 
+2026-02-23 16:35:45,194 | ERROR | genai_sql_agent | Snowflake query failed: Missing required Snowflake environment variables: user, password, account
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 203, in run_query_with_timing
+    conn = get_connection()
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 65, in get_connection
+    validate_snowflake_config()
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 33, in validate_snowflake_config
+    raise ValueError(
+ValueError: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:35:45,200 | INFO | genai_sql_agent | Executing SQL with timing (start): SELECT school_name, COUNT(DISTINCT student_id) AS num_students, SUM(CASE WHEN gender = 'M' THEN 1 ELSE 0 END) AS male_students, SUM(CASE WHEN gender = 'F' THEN 1 ELSE 0 END) AS female_students FROM (     SELECT school_name, student_id, gender     FROM orders     JOIN customers ON orders.customer_id 
+2026-02-23 16:35:45,202 | ERROR | genai_sql_agent | Snowflake query failed: Missing required Snowflake environment variables: user, password, account
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 203, in run_query_with_timing
+    conn = get_connection()
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 65, in get_connection
+    validate_snowflake_config()
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\snowflake_client.py", line 33, in validate_snowflake_config
+    raise ValueError(
+ValueError: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:37:52,641 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:37:54,024 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:37:54,025 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:38:24,505 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:38:28,696 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:38:40,067 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:39:31,049 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 16:39:31,415 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 16:39:31,421 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 16:39:31,422 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:50:10,319 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:50:11,574 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:50:17,205 | INFO | genai_sql_agent | Ollama warmup complete (model=phi3:mini)
+2026-02-23 16:50:19,870 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:50:51,437 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:50:52,793 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:50:52,795 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 16:50:56,080 | INFO | genai_sql_agent | Ollama warmup complete (model=phi3:mini)
+2026-02-23 16:51:54,774 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 16:51:55,302 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 16:51:55,307 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 16:51:55,308 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 16:52:03,394 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=3, history=0, time=164.2ms
+2026-02-23 16:52:03,395 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=3, history=0, time=164.2ms
+2026-02-23 16:53:37,505 | WARNING | genai_sql_agent | Ollama model=phi3:mini failed (HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=90)); next.
+2026-02-23 16:55:11,630 | WARNING | genai_sql_agent | Ollama model=codellama failed (HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=90)); next.
+2026-02-23 16:55:15,771 | INFO | genai_sql_agent | LM Studio not running at http://localhost:1234; skipping.
+2026-02-23 16:55:15,773 | ERROR | genai_sql_agent | All provider attempts failed: OpenAI:OPENAI_API_KEY missing
+2026-02-23 16:55:15,777 | ERROR | genai_sql_agent | SQL generation error
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\app.py", line 278, in <module>
+    sql_raw = generate_sql(user_q, schema_text=combined_schema_hint, db_uri=None)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\langchain_agent.py", line 856, in generate_sql
+    raise RuntimeError(f"SQL generation failed across providers. Details: {agg}{_hint}")
+RuntimeError: SQL generation failed across providers. Details: OpenAI:OPENAI_API_KEY missing | FREE OPTIONS: (1) Install Ollama (ollama.com) + run: ollama pull codellama (2) Open LM Studio (lmstudio.ai) and load a model (3) Add TOGETHER_API_KEY from together.ai (free $25 credits) to .env
+2026-02-23 16:55:26,118 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=3, history=0, time=55.6ms
+2026-02-23 16:55:26,119 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=3, history=0, time=55.6ms
+2026-02-23 16:56:25,343 | INFO | genai_sql_agent | Generated SQL via Ollama model=phi3:mini
+2026-02-23 16:56:45,474 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 16:56:48,426 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 16:58:43,895 | WARNING | genai_sql_agent | Ollama optimization failed (HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)).
+2026-02-23 16:58:48,019 | WARNING | genai_sql_agent | LM Studio optimization failed (HTTPConnectionPool(host='localhost', port=1234): Max retries exceeded with url: /v1/chat/completions (Caused by NewConnectionError("HTTPConnection(host='localhost', port=1234): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))).
+2026-02-23 16:58:48,021 | ERROR | genai_sql_agent | SQL optimization failed; returning original
+Traceback (most recent call last):
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\langchain_agent.py", line 1211, in optimize_sql
+    optimized = _llm_opt(cleaned_input)
+                ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\langchain_agent.py", line 1207, in _llm_opt
+    raise RuntimeError("All optimization providers failed — returning original SQL.")
+RuntimeError: All optimization providers failed — returning original SQL.
+2026-02-23 17:00:29,823 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 17:00:30,748 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 17:00:39,351 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 17:00:40,317 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 17:00:46,179 | INFO | genai_sql_agent | Ollama warmup complete (model=phi3:mini)
+2026-02-23 17:00:47,362 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 17:01:57,164 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 17:02:00,062 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 17:02:01,470 | INFO | genai_sql_agent | Ollama warmup complete (model=phi3:mini)
+2026-02-23 17:02:09,098 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 17:02:25,242 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 17:02:25,507 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 17:02:25,512 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 17:02:25,512 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 17:02:35,239 | INFO | genai_sql_agent | RAG context: cache=MISS, tables=0, examples=0, history=0, time=72.0ms
+2026-02-23 17:02:35,239 | INFO | genai_sql_agent | RAG context injected: tables=0, examples=0, history=0, time=72.0ms
+2026-02-23 17:03:07,916 | INFO | genai_sql_agent | Generated SQL via Ollama model=phi3:mini
+2026-02-23 17:03:59,058 | INFO | genai_sql_agent | Optimization via Ollama model=phi3:mini.
+2026-02-23 17:17:29,544 | ERROR | genai_sql_agent | OPENAI_API_KEY not set in environment
+2026-02-23 17:17:32,924 | INFO | genai_sql_agent | Initialized new OpenAI client (version 2.21.0)
+2026-02-23 17:17:36,480 | INFO | genai_sql_agent | Ollama warmup complete (model=phi3:mini)
+2026-02-23 17:17:41,725 | INFO | genai_sql_agent | LangChain components available (langchain_openai + langchain_community); will use for db_uri SQL generation
+2026-02-23 17:18:13,448 | INFO | genai_sql_agent | RAG embeddings: sentence-transformers (all-MiniLM-L6-v2)
+2026-02-23 17:18:13,698 | INFO | genai_sql_agent | RAG FewShotStore: seeded 13 examples
+2026-02-23 17:18:13,705 | INFO | genai_sql_agent | RAG Engine ready (embedding=local, persist=C:\Users\Rohith.Balsa\rag_project\GenQuery-AI\rag_store, few_shot=13)
+2026-02-23 17:18:13,706 | WARNING | genai_sql_agent | Rich schema extraction failed: Missing required Snowflake environment variables: user, password, account
+2026-02-23 17:19:50,642 | INFO | genai_sql_agent | Optimization via Ollama model=phi3:mini.

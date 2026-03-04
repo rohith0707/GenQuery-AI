@@ -396,201 +396,500 @@ def render_sql_preview(sql: str, accent: str):
 
 # ---------- RESULT TABS (SQL / DATA / VISUALIZATION) ----------
 
+# ── Business Visualization helpers ────────────────────────────────────────────
+
+def _normalize_decimals(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    """Convert Decimal columns to float in-place; return modified df + affected col names."""
+    dec_cols: list[str] = []
+    for col in df.columns:
+        try:
+            if df[col].apply(lambda v: isinstance(v, Decimal)).any():
+                df[col] = df[col].apply(lambda v: float(v) if isinstance(v, Decimal) else v)
+                dec_cols.append(col)
+        except Exception:
+            pass
+    return df, dec_cols
+
+
+def _classify_columns(df: pd.DataFrame):
+    numeric = df.select_dtypes(include=["number"]).columns.tolist()
+    dt_native = df.select_dtypes(include=["datetime64[ns]", "datetime64[ns, UTC]"]).columns.tolist()
+    name_dates = [c for c in df.columns if any(k in c.lower() for k in ["date", "time", "timestamp", "_at", "_month", "_year", "_week", "_day", "_quarter"])]
+    datetimes = list(dict.fromkeys(dt_native + name_dates))
+    cats = [c for c in df.columns if c not in numeric and c not in datetimes]
+    return numeric, datetimes, cats
+
+
+def _aggregate(df: pd.DataFrame, x_col: str, y_col: str, fn: str) -> pd.DataFrame:
+    ops = {
+        "sum": df.groupby(x_col)[y_col].sum(),
+        "mean": df.groupby(x_col)[y_col].mean(),
+        "count": df.groupby(x_col)[y_col].count(),
+        "max": df.groupby(x_col)[y_col].max(),
+        "min": df.groupby(x_col)[y_col].min(),
+    }
+    return ops[fn].reset_index()
+
+
+def _auto_chart_type(numeric: list, datetimes: list, cats: list, df: pd.DataFrame) -> str:
+    """Pick the best default chart for business decision-making."""
+    if datetimes and numeric:
+        return "Time Series"
+    if cats and numeric:
+        n_unique = df[cats[0]].nunique() if cats else 0
+        if n_unique <= 10:
+            return "Pie / Donut"
+        return "Horizontal Bar"
+    if len(numeric) >= 2:
+        return "Scatter"
+    return "Bar"
+
+
+def _kpi_cards(df: pd.DataFrame, numeric: list, accent: str):
+    """Render a row of KPI metric cards for every numeric column (max 6)."""
+    cols_to_show = numeric[:6]
+    if not cols_to_show:
+        st.info("No numeric columns found for KPI cards.")
+        return
+    card_cols = st.columns(len(cols_to_show))
+    for i, col in enumerate(cols_to_show):
+        total = df[col].sum()
+        avg = df[col].mean()
+        mx = df[col].max()
+        # Growth proxy: % change from first to last value (useful for ordered data)
+        pct_change = None
+        if len(df) >= 2:
+            first_val = df[col].iloc[0]
+            last_val = df[col].iloc[-1]
+            if first_val and first_val != 0:
+                pct_change = ((last_val - first_val) / abs(first_val)) * 100
+        with card_cols[i]:
+            arrow = ""
+            if pct_change is not None:
+                arrow = f"<span style='color:{'#22c55e' if pct_change >= 0 else '#ef4444'};font-size:12px'>{'▲' if pct_change >= 0 else '▼'} {abs(pct_change):.1f}%</span>"
+            st.markdown(
+                f"""<div style='background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);
+                border-radius:12px;padding:14px 10px;text-align:center;min-height:110px;'>
+                <div style='font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;
+                letter-spacing:1px;margin-bottom:4px;'>{col}</div>
+                <div style='font-size:22px;font-weight:700;color:{accent};'>{total:,.1f}</div>
+                <div style='font-size:11px;color:#94a3b8;margin-top:2px;'>
+                  avg {avg:,.1f} &nbsp;|&nbsp; max {mx:,.1f}
+                </div>
+                <div style='margin-top:4px;'>{arrow}</div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+
+
+def _render_pie_chart(df: pd.DataFrame, cat_col: str, num_col: str, agg_fn: str):
+    grouped = _aggregate(df, cat_col, num_col, agg_fn)
+    grouped.columns = [cat_col, num_col]
+    total = grouped[num_col].sum()
+    grouped["share_%"] = (grouped[num_col] / total * 100).round(1)
+    chart = (
+        alt.Chart(grouped)
+        .mark_arc(innerRadius=60)  # donut
+        .encode(
+            theta=alt.Theta(num_col, type="quantitative"),
+            color=alt.Color(cat_col, legend=alt.Legend(title=cat_col), scale=alt.Scale(scheme="category20")),
+            tooltip=[cat_col, alt.Tooltip(num_col, format=",.1f"), alt.Tooltip("share_%", format=".1f", title="Share %")],
+        )
+        .properties(height=380)
+    )
+    st.altair_chart(chart, use_container_width=True)
+    st.caption("🔢 Data breakdown")
+    grouped_show = grouped.sort_values(num_col, ascending=False).reset_index(drop=True)
+    st.dataframe(grouped_show, use_container_width=True)
+
+
+def _render_horizontal_bar(df: pd.DataFrame, cat_col: str, num_col: str, agg_fn: str, sort_opt: str, top_n: int):
+    grouped = _aggregate(df, cat_col, num_col, agg_fn)
+    grouped.columns = [cat_col, num_col]
+    if sort_opt != "none":
+        grouped = grouped.sort_values(num_col, ascending=(sort_opt == "asc"))
+    if top_n > 0:
+        grouped = grouped.head(top_n)
+    chart = (
+        alt.Chart(grouped)
+        .mark_bar()
+        .encode(
+            x=alt.X(num_col, title=f"{agg_fn.upper()}({num_col})"),
+            y=alt.Y(cat_col, sort="-x", title=cat_col),
+            color=alt.Color(num_col, scale=alt.Scale(scheme="purpleorange"), legend=None),
+            tooltip=[cat_col, alt.Tooltip(num_col, format=",.2f")],
+        )
+        .properties(height=max(300, min(600, len(grouped) * 28 + 60)))
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+
+def _render_scatter(df: pd.DataFrame, x_col: str, y_col: str, color_col: str | None):
+    enc = dict(
+        x=alt.X(x_col, title=x_col),
+        y=alt.Y(y_col, title=y_col),
+        tooltip=[x_col, y_col] + ([color_col] if color_col else []),
+    )
+    if color_col:
+        enc["color"] = alt.Color(color_col, scale=alt.Scale(scheme="category20"))
+    chart = alt.Chart(df).mark_circle(size=80, opacity=0.7).encode(**enc).properties(height=420)
+    # Trend line
+    trend = alt.Chart(df).mark_line(color="#f59e0b", strokeDash=[4, 4]).transform_regression(x_col, y_col).encode(
+        x=alt.X(x_col), y=alt.Y(y_col)
+    )
+    st.altair_chart((chart + trend).interactive(), use_container_width=True)
+
+
+def _render_stacked_bar(df: pd.DataFrame, x_col: str, y_col: str, color_col: str, agg_fn: str):
+    grouped = df.groupby([x_col, color_col])[y_col].agg(agg_fn).reset_index()
+    chart = (
+        alt.Chart(grouped)
+        .mark_bar()
+        .encode(
+            x=alt.X(x_col, sort=None, title=x_col),
+            y=alt.Y(y_col, stack="normalize" if agg_fn == "count" else "zero", title=f"{agg_fn.upper()}({y_col})"),
+            color=alt.Color(color_col, scale=alt.Scale(scheme="category20"), legend=alt.Legend(title=color_col)),
+            tooltip=[x_col, color_col, alt.Tooltip(y_col, format=",.2f")],
+        )
+        .properties(height=420)
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+
+def _render_time_series(df: pd.DataFrame, ts_col: str, y_col: str, agg_fn: str, color_col: str | None):
+    df_ts = df.copy()
+    if df_ts[ts_col].dtype.kind in ("O", "U"):
+        df_ts[ts_col] = pd.to_datetime(df_ts[ts_col], errors="coerce")
+    df_ts = df_ts.dropna(subset=[ts_col])
+    if df_ts.empty:
+        st.warning("No valid datetime values after parsing.")
+        return
+    df_ts["__bucket"] = df_ts[ts_col].dt.date
+    if color_col and color_col != "(none)":
+        grouped = df_ts.groupby(["__bucket", color_col])[y_col].agg(agg_fn).reset_index()
+        grouped.columns = ["bucket", color_col, y_col]
+        chart = (
+            alt.Chart(grouped)
+            .mark_line(point=True)
+            .encode(
+                x=alt.X("bucket", title=ts_col),
+                y=alt.Y(y_col, title=f"{agg_fn.upper()}({y_col})"),
+                color=alt.Color(color_col, scale=alt.Scale(scheme="category20")),
+                tooltip=["bucket", color_col, y_col],
+            )
+            .properties(height=420)
+        )
+    else:
+        grouped = _aggregate(df_ts.rename(columns={y_col: "__val"}), "__bucket", "__val", agg_fn)
+        grouped.columns = ["bucket", y_col]
+        base = alt.Chart(grouped).encode(x=alt.X("bucket", title=ts_col))
+        line = base.mark_line(point=True, color="#8b5cf6").encode(
+            y=alt.Y(y_col, title=f"{agg_fn.upper()}({y_col})"),
+            tooltip=["bucket", y_col],
+        )
+        area = base.mark_area(opacity=0.15, color="#8b5cf6").encode(y=alt.Y(y_col))
+        chart = (area + line).properties(height=420)
+    st.altair_chart(chart, use_container_width=True)
+
+
+def _ai_business_insight(df: pd.DataFrame, sql: str) -> str:
+    """Generate a plain-English business narrative using Ollama (or fallback text)."""
+    try:
+        import requests as _req
+        # Build a compact data sample for the prompt (max 20 rows)
+        sample = df.head(20).to_string(index=False)
+        stats = df.describe(include="all").to_string()
+        prompt = (
+            "You are a senior business analyst. Analyse the following SQL query results and write "
+            "a SHORT business executive summary (3-5 bullet points max). Focus on:\n"
+            "- Key findings and notable numbers\n"
+            "- Top performers and laggards\n"
+            "- Trends or anomalies worth attention\n"
+            "- One concrete business recommendation\n\n"
+            f"SQL used:\n{sql}\n\n"
+            f"Data sample (first 20 rows):\n{sample}\n\n"
+            f"Summary statistics:\n{stats}\n\n"
+            "Write ONLY the bullet-point summary. Be specific with the actual numbers from the data."
+        )
+        # Try Ollama first
+        _r = _req.get("http://localhost:11434/api/tags", timeout=2)
+        if _r.status_code == 200:
+            models = _r.json().get("models", [])
+            if models:
+                model_name = models[0]["name"]
+                resp = _req.post(
+                    "http://localhost:11434/api/chat",
+                    json={
+                        "model": model_name,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "stream": False,
+                        "options": {"temperature": 0.3, "num_predict": 400},
+                    },
+                    timeout=90,
+                )
+                if resp.status_code == 200:
+                    return resp.json().get("message", {}).get("content", "").strip()
+    except Exception:
+        pass
+    # Statistical fallback
+    numeric = df.select_dtypes(include="number").columns.tolist()
+    lines = [f"📊 **Dataset:** {len(df):,} rows × {len(df.columns)} columns"]
+    for col in numeric[:4]:
+        lines.append(
+            f"• **{col}** — Total: {df[col].sum():,.1f} | Avg: {df[col].mean():,.1f} | Max: {df[col].max():,.1f}"
+        )
+    return "\n".join(lines)
+
+
 def render_result_tabs(sql: str, df: pd.DataFrame, accent: str):
-    tabs = st.tabs(["🧪 SQL", "📊 Data", "📈 Visualization"])
+    tabs = st.tabs(["🧪 SQL", "📊 Data", "📈 Visualization", "🎯 Business Dashboard", "🤖 AI Insights"])
+
+    # ── Tab 0: SQL ─────────────────────────────────────────────────────────────
     with tabs[0]:
         st.markdown("##### Generated SQL")
         st.code(sql, language="sql")
         _render_copy_button("copy-sql-tab-btn", sql, accent)
 
+    # ── Tab 1: Raw Data ────────────────────────────────────────────────────────
     with tabs[1]:
         if df.empty:
             st.info("Query executed successfully but returned no rows.")
         else:
             st.success(f"Returned {len(df)} rows.")
-            st.dataframe(df, width="stretch")
+            st.dataframe(df, use_container_width=True)
+            c1, c2 = st.columns(2)
             csv = df.to_csv(index=False).encode("utf-8")
-            st.download_button("📥 Download CSV", data=csv, file_name="query_results.csv", mime="text/csv")
-
-    with tabs[2]:
-        if df.empty:
-            st.info("No data to visualize.")
-            return
-
-        # Column classification (+ Decimal normalization)
-        # Convert any Decimal-valued columns to float to avoid Altair type inference warnings
-        dec_columns = []
-        for col in df.columns:
+            c1.download_button("📥 Download CSV", data=csv, file_name="query_results.csv", mime="text/csv")
             try:
-                if df[col].apply(lambda v: isinstance(v, Decimal)).any():
-                    df[col] = df[col].apply(lambda v: float(v) if isinstance(v, Decimal) else v)
-                    dec_columns.append(col)
+                excel_buf = __import__("io").BytesIO()
+                df.to_excel(excel_buf, index=False)
+                c2.download_button("📥 Download Excel", data=excel_buf.getvalue(),
+                                   file_name="query_results.xlsx",
+                                   mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             except Exception:
                 pass
 
-        numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-        datetime_cols_native = df.select_dtypes(include=["datetime64[ns]", "datetime64[ns, UTC]"]).columns.tolist()
-        name_based_dates = [c for c in df.columns if any(k in c.lower() for k in ["date", "time", "timestamp", "_at"])]
-        datetime_cols = list(dict.fromkeys(datetime_cols_native + name_based_dates))
-        cat_cols = [c for c in df.columns if c not in numeric_cols and c not in datetime_cols]
-        if dec_columns:
-            st.caption(f"Normalized Decimal columns to float: {', '.join(dec_columns)}")
+    # ── Tab 2: Visualization ──────────────────────────────────────────────────
+    with tabs[2]:
+        if df.empty:
+            st.info("No data to visualize.")
+        else:
+            df, dec_cols = _normalize_decimals(df.copy())
+            numeric, datetimes, cats = _classify_columns(df)
+            if dec_cols:
+                st.caption(f"Normalized Decimal → float: {', '.join(dec_cols)}")
 
-        st.markdown("##### 📊 Select a chart type")
-        chart_choice = st.selectbox(
-            "Chart type",
-            [
-                "None",
-                "Bar",
-                "Line",
-                "Area",
-                "Time Series",
-                "Correlation Heatmap",
-                "Custom Builder",
-            ],
-            index=1 if (numeric_cols and (cat_cols or datetime_cols)) else 0,
-        )
+            auto = _auto_chart_type(numeric, datetimes, cats, df)
+            chart_choices = ["Auto (" + auto + ")", "Bar", "Horizontal Bar", "Line", "Area",
+                             "Pie / Donut", "Scatter", "Stacked Bar", "Time Series",
+                             "Correlation Heatmap", "Custom Builder"]
+            chart_choice = st.selectbox("Chart type", chart_choices, index=0, key="viz_chart_type")
+            effective = auto if chart_choice.startswith("Auto") else chart_choice
 
-        if chart_choice == "None":
-            st.info("Choose a chart type to visualize results.")
-            return
+            def _agg_controls(key_sfx=""):
+                c1, c2, c3 = st.columns(3)
+                agg = c1.selectbox("Aggregate", ["sum", "mean", "count", "max", "min"], index=0, key=f"agg_{key_sfx}")
+                srt = c2.selectbox("Sort", ["desc", "asc", "none"], index=0, key=f"srt_{key_sfx}")
+                topn = c3.number_input("Top N (0 = all)", min_value=0, max_value=500, value=0, step=5, key=f"topn_{key_sfx}")
+                return agg, srt, int(topn)
 
-        def aggregate(df_local, x_col, y_col, fn):
-            ops = {
-                "sum": df_local.groupby(x_col)[y_col].sum().reset_index(),
-                "mean": df_local.groupby(x_col)[y_col].mean().reset_index(),
-                "count": df_local.groupby(x_col)[y_col].count().reset_index(),
-            }
-            return ops[fn]
+            if effective == "Pie / Donut":
+                if not (cats and numeric):
+                    st.warning("Need a categorical + numeric column.")
+                else:
+                    c1, c2, c3 = st.columns(3)
+                    cat_c = c1.selectbox("Category", cats, key="pie_cat")
+                    num_c = c2.selectbox("Metric", numeric, key="pie_num")
+                    agg_f = c3.selectbox("Aggregate", ["sum", "mean", "count"], key="pie_agg")
+                    _render_pie_chart(df, cat_c, num_c, agg_f)
 
-        # Time Series
-        if chart_choice == "Time Series":
-            if not (datetime_cols and numeric_cols):
-                st.warning("Requires at least one datetime and one numeric column.")
-                return
-            ts_col = st.selectbox("Datetime column", datetime_cols, index=0)
-            y_col = st.selectbox("Numeric column", numeric_cols, index=0)
-            agg_fn = st.selectbox("Aggregate", ["mean", "sum"], index=0)
-            df_ts = df.copy()
-            if df_ts[ts_col].dtype.kind in ("O", "U"):
-                df_ts[ts_col] = pd.to_datetime(df_ts[ts_col], errors="coerce")
-            df_ts = df_ts.dropna(subset=[ts_col])
-            if df_ts.empty:
-                st.warning("No valid datetime values after parsing.")
-                return
-            df_ts["__bucket"] = df_ts[ts_col].dt.date if hasattr(df_ts[ts_col], "dt") else df_ts[ts_col]
-            grouped = aggregate(df_ts.rename(columns={y_col: "__val"}), "__bucket", "__val", agg_fn)
-            grouped.columns = ["bucket", y_col]
-            chart = (
-                alt.Chart(grouped)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("bucket", title=ts_col),
-                    y=alt.Y(y_col, title=f"{agg_fn.upper()}({y_col})"),
-                    tooltip=["bucket", y_col],
+            elif effective == "Horizontal Bar":
+                if not (cats and numeric):
+                    st.warning("Need a categorical + numeric column.")
+                else:
+                    c1, c2 = st.columns(2)
+                    cat_c = c1.selectbox("Category", cats, key="hbar_cat")
+                    num_c = c2.selectbox("Metric", numeric, key="hbar_num")
+                    agg_f, srt, topn = _agg_controls("hbar")
+                    _render_horizontal_bar(df, cat_c, num_c, agg_f, srt, topn)
+
+            elif effective == "Scatter":
+                if len(numeric) < 2:
+                    st.warning("Need at least two numeric columns.")
+                else:
+                    c1, c2, c3 = st.columns(3)
+                    xc = c1.selectbox("X axis", numeric, index=0, key="sc_x")
+                    yc = c2.selectbox("Y axis", numeric, index=min(1, len(numeric)-1), key="sc_y")
+                    color_opts = ["(none)"] + cats
+                    cc = c3.selectbox("Color by", color_opts, key="sc_col")
+                    _render_scatter(df, xc, yc, cc if cc != "(none)" else None)
+
+            elif effective == "Stacked Bar":
+                if not (cats and numeric):
+                    st.warning("Need categorical + numeric columns + a second categorical for stacking.")
+                else:
+                    c1, c2, c3, c4 = st.columns(4)
+                    xc = c1.selectbox("X axis", cats, index=0, key="sb_x")
+                    yc = c2.selectbox("Metric", numeric, index=0, key="sb_y")
+                    color_opts = [c for c in cats if c != xc] or cats
+                    cc = c3.selectbox("Stack by", color_opts, key="sb_col")
+                    agg_f = c4.selectbox("Aggregate", ["sum", "mean", "count"], key="sb_agg")
+                    _render_stacked_bar(df, xc, yc, cc, agg_f)
+
+            elif effective == "Time Series":
+                if not (datetimes and numeric):
+                    st.warning("Need a datetime + numeric column.")
+                else:
+                    c1, c2, c3, c4 = st.columns(4)
+                    ts_c = c1.selectbox("Date column", datetimes, key="ts_dt")
+                    yc = c2.selectbox("Metric", numeric, key="ts_y")
+                    agg_f = c3.selectbox("Aggregate", ["mean", "sum", "count"], key="ts_agg")
+                    clr_opts = ["(none)"] + cats
+                    clr = c4.selectbox("Color/Group by", clr_opts, key="ts_clr")
+                    _render_time_series(df, ts_c, yc, agg_f, clr if clr != "(none)" else None)
+
+            elif effective == "Correlation Heatmap":
+                if len(numeric) < 2:
+                    st.warning("Need ≥ 2 numeric columns.")
+                else:
+                    subset = st.multiselect("Columns", numeric, default=numeric[:min(6, len(numeric))], key="hm_cols")
+                    if len(subset) >= 2:
+                        corr_df = df[subset].corr().reset_index().melt("index")
+                        corr_df.columns = ["FeatureX", "FeatureY", "Correlation"]
+                        ch = (
+                            alt.Chart(corr_df).mark_rect()
+                            .encode(
+                                x=alt.X("FeatureX", sort=None),
+                                y=alt.Y("FeatureY", sort=None),
+                                color=alt.Color("Correlation", scale=alt.Scale(scheme="purpleblue")),
+                                tooltip=["FeatureX", "FeatureY", alt.Tooltip("Correlation", format=".2f")],
+                            ).properties(height=420)
+                        )
+                        st.altair_chart(ch, use_container_width=True)
+
+            elif effective in ("Bar", "Line", "Area"):
+                if not (numeric and cats):
+                    st.warning("Need a categorical + numeric column.")
+                else:
+                    c1, c2 = st.columns(2)
+                    xc = c1.selectbox("Category", cats, key="bla_x")
+                    yc = c2.selectbox("Metric", numeric, key="bla_y")
+                    agg_f, srt, topn = _agg_controls("bla")
+                    grouped = _aggregate(df.rename(columns={yc: "__val"}), xc, "__val", agg_f)
+                    grouped.columns = [xc, yc]
+                    if srt != "none":
+                        grouped = grouped.sort_values(yc, ascending=(srt == "asc"))
+                    if topn > 0:
+                        grouped = grouped.head(topn)
+                    mark_map = {"Bar": alt.Chart(grouped).mark_bar(),
+                                "Line": alt.Chart(grouped).mark_line(point=True),
+                                "Area": alt.Chart(grouped).mark_area()}
+                    ch = mark_map[effective].encode(
+                        x=alt.X(xc, sort=None), y=alt.Y(yc, title=f"{agg_f.upper()}({yc})"),
+                        tooltip=[xc, alt.Tooltip(yc, format=",.2f")],
+                    ).properties(height=420)
+                    st.altair_chart(ch, use_container_width=True)
+
+            elif effective == "Custom Builder":
+                if not (numeric and (cats or datetimes)):
+                    st.warning("Need numeric + categorical or datetime column.")
+                else:
+                    ax = cats + datetimes
+                    c1, c2, c3, c4 = st.columns(4)
+                    xc = c1.selectbox("X axis", ax, key="cb_x")
+                    yc = c2.selectbox("Y axis", numeric, key="cb_y")
+                    knd = c3.selectbox("Type", ["Bar", "Line", "Area", "Horizontal Bar"], key="cb_kind")
+                    agg_f = c4.selectbox("Aggregate", ["sum", "mean", "count", "max", "min"], key="cb_agg")
+                    grouped = _aggregate(df.rename(columns={yc: "__val"}), xc, "__val", agg_f)
+                    grouped.columns = [xc, yc]
+                    if knd == "Horizontal Bar":
+                        ch = alt.Chart(grouped).mark_bar().encode(
+                            x=alt.X(yc), y=alt.Y(xc, sort="-x"),
+                            color=alt.Color(yc, scale=alt.Scale(scheme="purpleorange"), legend=None),
+                            tooltip=[xc, alt.Tooltip(yc, format=",.2f")],
+                        ).properties(height=420)
+                    else:
+                        mark_map = {"Bar": alt.Chart(grouped).mark_bar(),
+                                    "Line": alt.Chart(grouped).mark_line(point=True),
+                                    "Area": alt.Chart(grouped).mark_area()}
+                        ch = mark_map[knd].encode(
+                            x=alt.X(xc, sort=None), y=alt.Y(yc, title=f"{agg_f.upper()}({yc})"),
+                            tooltip=[xc, alt.Tooltip(yc, format=",.2f")],
+                        ).properties(height=420)
+                    st.altair_chart(ch, use_container_width=True)
+
+    # ── Tab 3: Business Dashboard ──────────────────────────────────────────────
+    with tabs[3]:
+        if df.empty:
+            st.info("No data available.")
+        else:
+            df_bd, _ = _normalize_decimals(df.copy())
+            numeric, datetimes, cats = _classify_columns(df_bd)
+
+            # KPI cards row
+            st.markdown("#### 📌 Key Metrics")
+            _kpi_cards(df_bd, numeric, accent)
+            st.markdown("---")
+
+            # Auto best-chart
+            auto_type = _auto_chart_type(numeric, datetimes, cats, df_bd)
+            st.markdown(f"#### 📊 Recommended Chart — *{auto_type}*")
+            try:
+                if auto_type == "Time Series" and datetimes and numeric:
+                    _render_time_series(df_bd, datetimes[0], numeric[0], "sum", None)
+                elif auto_type == "Pie / Donut" and cats and numeric:
+                    _render_pie_chart(df_bd, cats[0], numeric[0], "sum")
+                elif auto_type == "Horizontal Bar" and cats and numeric:
+                    _render_horizontal_bar(df_bd, cats[0], numeric[0], "sum", "desc", 15)
+                elif auto_type == "Scatter" and len(numeric) >= 2:
+                    _render_scatter(df_bd, numeric[0], numeric[1], cats[0] if cats else None)
+                else:
+                    if cats and numeric:
+                        _render_horizontal_bar(df_bd, cats[0], numeric[0], "sum", "desc", 15)
+                    else:
+                        st.info("Add categorical or datetime columns to enable chart auto-selection.")
+            except Exception as chart_err:
+                st.warning(f"Auto-chart failed: {chart_err}")
+
+            st.markdown("---")
+            # Top / Bottom performers
+            if cats and numeric:
+                perf_col = numeric[0]
+                grp_col = cats[0]
+                st.markdown(f"#### 🏆 Rankings — {perf_col} by {grp_col}")
+                ranked = df_bd.groupby(grp_col)[perf_col].sum().reset_index()
+                ranked.columns = [grp_col, perf_col]
+                ranked["Share %"] = (ranked[perf_col] / ranked[perf_col].sum() * 100).round(1)
+                ranked = ranked.sort_values(perf_col, ascending=False).reset_index(drop=True)
+                ranked.index += 1
+                c1, c2 = st.columns(2)
+                c1.markdown("**🟢 Top 10**")
+                c1.dataframe(ranked.head(10), use_container_width=True)
+                c2.markdown("**🔴 Bottom 10**")
+                c2.dataframe(ranked.tail(10).sort_values(perf_col), use_container_width=True)
+
+    # ── Tab 4: AI Business Insights ────────────────────────────────────────────
+    with tabs[4]:
+        if df.empty:
+            st.info("No data available.")
+        else:
+            st.markdown("#### 🤖 AI-Generated Business Narrative")
+            st.caption("Powered by local Ollama LLM — no data leaves your machine.")
+            if st.button("✨ Generate Business Insights", key="gen_insights_btn"):
+                with st.spinner("Analysing data with AI..."):
+                    insight = _ai_business_insight(df, sql)
+                st.markdown(
+                    f"""<div style='background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);
+                    border-radius:12px;padding:20px;line-height:1.7;font-size:15px;'>
+                    {insight.replace(chr(10), "<br>")}
+                    </div>""",
+                    unsafe_allow_html=True,
                 )
-                .properties(height=420)
-            )
-            st.altair_chart(chart, use_container_width=True)
-            return
-
-        # Correlation Heatmap
-        if chart_choice == "Correlation Heatmap":
-            if len(numeric_cols) < 2:
-                st.warning("Need at least two numeric columns.")
-                return
-            subset = st.multiselect("Numeric columns", numeric_cols, default=numeric_cols[: min(5, len(numeric_cols))])
-            if len(subset) < 2:
-                st.info("Select two or more columns.")
-                return
-            corr_df = df[subset].corr().reset_index().melt("index")
-            corr_df.columns = ["FeatureX", "FeatureY", "Correlation"]
-            chart = (
-                alt.Chart(corr_df)
-                .mark_rect()
-                .encode(
-                    x=alt.X("FeatureX", sort=None),
-                    y=alt.Y("FeatureY", sort=None),
-                    color=alt.Color("Correlation", scale=alt.Scale(scheme="purpleblue"), legend=alt.Legend(title="ρ")),
-                    tooltip=["FeatureX", "FeatureY", alt.Tooltip("Correlation", format=".2f")],
-                )
-                .properties(height=420)
-            )
-            st.altair_chart(chart, use_container_width=True)
-            return
-
-        # Simple aggregated charts (Bar / Line / Area) with immediate output + optional data preview
-        if chart_choice in ("Bar", "Line", "Area"):
-            if not (numeric_cols and cat_cols):
-                st.warning("Need at least one categorical and one numeric column.")
-                return
-
-            sel_cols = st.columns(5)
-            x_col = sel_cols[0].selectbox("Categorical", cat_cols, index=0)
-            y_col = sel_cols[1].selectbox("Numeric", numeric_cols, index=0)
-            agg_fn = sel_cols[2].selectbox("Aggregate", ["sum", "mean", "count"], index=0)
-            sort_opt = sel_cols[3].selectbox("Sort", ["desc", "asc", "none"], index=0)
-            show_data = sel_cols[4].checkbox("Show aggregated data", value=True)
-
-            grouped = aggregate(df.rename(columns={y_col: "__val"}), x_col, "__val", agg_fn)
-            grouped.columns = [x_col, y_col]
-
-            if sort_opt != "none":
-                grouped = grouped.sort_values(by=y_col, ascending=(sort_opt == "asc"))
-
-            mark_map = {"Bar": "bar", "Line": "line", "Area": "area"}
-            mark = mark_map[chart_choice]
-            if mark == "bar":
-                chart = alt.Chart(grouped).mark_bar()
-            elif mark == "line":
-                chart = alt.Chart(grouped).mark_line(point=True)
+                # Download as text
+                st.download_button("📥 Download Insights", data=insight,
+                                   file_name="business_insights.txt", mime="text/plain")
             else:
-                chart = alt.Chart(grouped).mark_area()
-
-            st.markdown("###### Chart Output")
-            chart = chart.encode(
-                x=alt.X(x_col, sort=None, title=x_col),
-                y=alt.Y(y_col, title=f"{agg_fn.upper()}({y_col})"),
-                tooltip=[x_col, y_col],
-            ).properties(height=420, width=880)
-            st.altair_chart(chart, use_container_width=True)
-
-            if show_data:
-                st.caption("Aggregated data used for chart")
-                st.dataframe(grouped, width="stretch")
-
-            return
-
-        # Custom Builder
-        if chart_choice == "Custom Builder":
-            if not (numeric_cols and (cat_cols or datetime_cols)):
-                st.warning("Need at least one numeric plus one categorical or datetime column.")
-                return
-            axis_choices = cat_cols + datetime_cols
-            x = st.selectbox("X (categorical/time)", axis_choices, index=0)
-            y = st.selectbox("Y (numeric)", numeric_cols, index=0)
-            chart_kind = st.selectbox("Type", ["Bar", "Line", "Area"], index=0)
-            agg_fn = st.selectbox("Aggregate", ["sum", "mean", "count"], index=0)
-            sort_opt = st.selectbox("Sort", ["desc", "asc", "none"], index=0)
-            grouped = aggregate(df.rename(columns={y: "__val"}), x, "__val", agg_fn)
-            grouped.columns = [x, y]
-            if sort_opt != "none":
-                grouped = grouped.sort_values(by=y, ascending=(sort_opt == "asc"))
-            mark_map = {"Bar": "bar", "Line": "line", "Area": "area"}
-            mark = mark_map[chart_kind]
-            if mark == "bar":
-                chart = alt.Chart(grouped).mark_bar()
-            elif mark == "line":
-                chart = alt.Chart(grouped).mark_line(point=True)
-            else:
-                chart = alt.Chart(grouped).mark_area()
-            chart = chart.encode(
-                x=alt.X(x, sort=None, title=x),
-                y=alt.Y(y, title=f"{agg_fn.upper()}({y})"),
-                tooltip=[x, y],
-            ).properties(height=420, width=880)
-            st.altair_chart(chart, use_container_width=True)
-            return
+                st.info("Click **Generate Business Insights** to get an AI narrative from your query results.")
 
 
 # ---------- GLOBAL STYLE INJECTION WRAPPER ----------
