@@ -1,0 +1,31 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Byte-compiled / cached
+*.pyc
+
+# ChromaDB local store
+rag_store/
