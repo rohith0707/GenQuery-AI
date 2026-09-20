@@ -27,16 +27,32 @@ class AgenticQueryEngine:
     def compile(self,result,schema_text=""):
         if result.sql or not result.validation.passed: return result
         from langchain_agent import generate_sql
+        from .metrics import context_for
+        from .cost import assess_sql
         context=schema_text
         if result.retrieval.schema: context += "\\nRetrieved schema:\\n"+"\\n".join(x.get("compact_schema","") for x in result.retrieval.schema)
+        metric_context=context_for(result.plan.metrics)
+        if metric_context: context += "\\nMetric definitions:\\n"+"\\n".join(str(x) for x in metric_context)
         try: sql=generate_sql(result.question,context)
         except Exception as exc:
             result.validation.errors.append(str(exc)); result.validation.passed=False; result.traces.append(AgentTrace("compile","SQL Compiler","failed",str(exc))); return result
         ok,msg,clean=validate_sql(sql)
         if not ok:
-            result.validation.errors.append(msg); result.validation.passed=False; result.traces.append(AgentTrace("compile","SQL Compiler","blocked",msg)); return result
+            from .repair import repair_once
+            try:
+                sql=repair_once(result.question,msg,context)
+                result.repair_count=1
+                ok,msg,clean=validate_sql(sql)
+                result.traces.append(AgentTrace("repair","Repair Agent","completed" if ok else "blocked","Bounded one-shot SQL repair",[]))
+            except Exception as exc:
+                msg=str(exc); ok=False
+        if not ok:
+            result.validation.errors.append(msg); result.validation.passed=False; return result
         result.sql=clean
+        result.cost=assess_sql(clean)
         result.evidence=[{"type":"retrieval","source":x["source"],"detail":x["detail"]} for x in result.retrieval.sources]
         result.evidence.append({"type":"query_plan","source":"semantic_plan","detail":str(result.plan.to_dict())})
+        result.evidence.append({"type":"metric","source":"metric_catalog","detail":str(metric_context)})
+        result.evidence.append({"type":"cost","source":"pre_execution_heuristic","detail":str(result.cost)})
         result.traces.append(AgentTrace("compile","SQL Compiler","completed","Compiled validated Query Plan into SQL"))
         return result
