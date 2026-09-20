@@ -1,0 +1,20 @@
+{"id":"g001","question":"What was total revenue last quarter?","expected_metric":"revenue","expected_entities":["order"],"difficulty":"simple"}
+{"id":"g002","question":"How many orders did we have last month?","expected_metric":"count","expected_entities":["order"],"difficulty":"simple"}
+{"id":"g003","question":"What is the average order value?","expected_metric":"average","expected_entities":["order"],"difficulty":"simple"}
+{"id":"g004","question":"What was revenue by region last quarter?","expected_metric":"revenue","expected_entities":["order","location"],"difficulty":"medium"}
+{"id":"g005","question":"Show sales by city for Hyderabad.","expected_metric":"revenue","expected_entities":["order","location"],"difficulty":"medium"}
+{"id":"g006","question":"How many customers are there?","expected_metric":"count","expected_entities":["customer"],"difficulty":"simple"}
+{"id":"g007","question":"What was revenue from enterprise customers last quarter?","expected_metric":"revenue","expected_entities":["order","customer"],"difficulty":"medium"}
+{"id":"g008","question":"What was revenue from SMB customers in Hyderabad?","expected_metric":"revenue","expected_entities":["order","customer","location"],"difficulty":"hard"}
+{"id":"g009","question":"How many orders did each customer place last month?","expected_metric":"count","expected_entities":["order","customer"],"difficulty":"medium"}
+{"id":"g010","question":"What was average revenue per customer last quarter?","expected_metric":"average","expected_entities":["order","customer"],"difficulty":"hard"}
+{"id":"g011","question":"Show revenue by product last quarter.","expected_metric":"revenue","expected_entities":["order","product"],"difficulty":"medium"}
+{"id":"g012","question":"Which products had the most sales?","expected_metric":"revenue","expected_entities":["order","product"],"difficulty":"medium"}
+{"id":"g013","question":"Compare revenue this quarter with last quarter.","expected_metric":"revenue","expected_entities":["order"],"difficulty":"hard"}
+{"id":"g014","question":"How many enterprise customers ordered products last year?","expected_metric":"count","expected_entities":["customer","order","product"],"difficulty":"hard"}
+{"id":"g015","question":"Show GMV by region for the previous quarter.","expected_metric":"revenue","expected_entities":["order","location"],"difficulty":"medium"}
+{"id":"g016","question":"What was sales in Bangalore last month?","expected_metric":"revenue","expected_entities":["order","location"],"difficulty":"medium"}
+{"id":"g017","question":"How many transactions happened in Mumbai?","expected_metric":"count","expected_entities":["order","location"],"difficulty":"medium"}
+{"id":"g018","question":"Give me revenue by customer for last year.","expected_metric":"revenue","expected_entities":["order","customer"],"difficulty":"medium"}
+{"id":"g019","question":"Find average order value by region.","expected_metric":"average","expected_entities":["order","location"],"difficulty":"hard"}
+{"id":"g020","question":"What is total sales?","expected_metric":"revenue","expected_entities":["order"],"difficulty":"simple"}
