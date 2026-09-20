@@ -5,7 +5,7 @@ from agentic.engine import AgenticQueryEngine
 
 st.set_page_config(page_title="GenQuery Agent Workspace", page_icon="🧠", layout="wide")
 st.title("🧠 GenQuery Agent Workspace")
-st.caption("Retrieve → Resolve → Plan → Validate → Compile → Execute → Prove")
+st.caption("Retrieve → Resolve → Plan → Validate → Compile → Execute → Prove")\nst.page_link("pages/Benchmark_Workspace.py",label="📈 Open Benchmark Workspace")
 
 question=st.text_area("Business question",value="What was our revenue from enterprise customers in Hyderabad last quarter?",height=90)
 c1,c2=st.columns([1,3])
