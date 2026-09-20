@@ -1,25 +1,41 @@
 # GenQuery-AI
 
-> Natural language → safe, schema-aware SQL for Snowflake.
+> Natural language → semantic reasoning → validated SQL → decision-ready answer, with evidence.
 
-GenQuery-AI explores how to build a natural-language-to-SQL system as a **reliable application**, not just an LLM prompt.
+GenQuery-AI explores how to build a natural-language analytics system as a **reliable agentic application**, not just an LLM prompt. Snowflake is the controlled execution layer; the customer-facing product is the interpreted answer.
 
 The core pipeline is:
 
 ```text
-User question
-     ↓
-Intent understanding
-     ↓
-Schema retrieval
-     ↓
-SQL generation
-     ↓
-Deterministic validation
-     ↓
-Read-only execution
-     ↓
-Result + telemetry
+Business question
+      ↓
+Intent / Semantic resolution
+      ↓
+Adaptive RAG
+      ↓
+Semantic Graph
+      ↓
+Query Plan IR
+      ↓
+Validation / Safety
+      ↓
+SQL Compiler
+      ↓
+Snowflake (controlled execution)
+      ↓
+Result Interpreter
+      ↓
+Answer Planner
+      ↓
+Decision-ready Answer
+      ├── Executive / KPI
+      ├── Chart / Trend
+      ├── Comparison
+      ├── Insight / anomaly
+      ├── Table
+      └── Raw data / SQL for audit
+      ↓
+Evidence
 ```
 
 ## Why this project exists
@@ -124,6 +140,25 @@ On Windows, copy `.env.example` to `.env` manually if `cp` is unavailable.
 
 Use a dedicated **read-only** Snowflake role. The application should not be given write privileges merely because generated SQL comes from a trusted-looking prompt.
 
+## Customer Answer Intelligence
+
+The raw Snowflake DataFrame is treated as an internal execution artifact. The customer receives an Answer Artifact that can be rendered as:
+
+| View | Typical question |
+| --- | --- |
+| Executive | What happened to revenue? |
+| KPI | What is revenue? |
+| Chart | Show revenue by region |
+| Trend | How has revenue changed over time? |
+| Comparison | Compare Hyderabad vs Bangalore |
+| Insight | Why did revenue fall? |
+| Table | Show grouped results |
+| Raw | Show underlying data / SQL |
+
+The answer layer is deterministic today: it inspects the result shape, selects an appropriate view, produces KPIs/comparisons/trend data, flags simple statistical outliers, and keeps evidence attached. Deeper causal reasoning is intentionally not claimed without supporting evidence.
+
+The Agent Workspace lets an operator switch between customer-facing views while retaining evidence and an explicit raw-data/audit path.
+
 ## Evaluation
 
 The project treats evaluation as an engineering artifact. See [`docs/EVALUATION.md`](docs/EVALUATION.md).
@@ -172,12 +207,34 @@ The goal is to make those failure modes measurable and progressively reduce them
 ## Roadmap
 
 - [ ] Public regression dataset with versioned cases
-- [ ] Automated benchmark runner
+- [x] Automated benchmark runner
 - [ ] Model/provider comparison dashboard
-- [ ] Execution-cost estimation
+- [ ] Execution-cost estimation with Snowflake EXPLAIN
 - [ ] Better retrieval evaluation
-- [ ] CI evaluation gate for regression cases
+- [x] CI evaluation gate for regression cases
+- [x] Container deployment path
+- [x] Customer-facing answer artifacts
 - [ ] FastAPI service layer alongside the Streamlit UI
+
+## Latest main commits
+
+Latest main commits now include the benchmark/deployment loop plus customer-answer intelligence:
+
+| Commit | Change |
+| --- | --- |
+| 7f033137 | deploy: add container health check |
+| 8bb47801 | ci: run benchmark regression without model dependency |
+| 4781f9bb | feat: link benchmark workspace |
+| 2f302029 | fix: separate static and live benchmark modes |
+| fb65e285 | ci: add pytest dependency |
+| adad6a17 | docs: add benchmark and deployment runbook |
+| 1687f266 | deploy: add Streamlit production container |
+| a590d8b7 | feat: add benchmark workspace |
+| 59b84fab | feat: add live benchmark runner |
+| e3074372 | feat: benchmark customer answer artifacts |
+| d818e73f | feat: render customer-facing answer views |
+| 74a332e8 | feat: support multiple answer render views |
+| 95fb6be8 | feat: add customer answer intelligence |
 
 ## License
 
