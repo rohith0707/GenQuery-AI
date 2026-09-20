@@ -168,18 +168,23 @@ def build_answer(question: str, df: pd.DataFrame, *, plan: Any | None = None,
     )
 
 
-def render_answer(artifact: AnswerArtifact, df: pd.DataFrame | None = None) -> None:
+def render_answer(artifact: AnswerArtifact, df: pd.DataFrame | None = None, view: str = "auto") -> None:
     import streamlit as st
-    if artifact.answer_type == "empty":
+
+    selected = artifact.answer_type if view == "auto" else view
+    if selected == "empty":
         st.info(artifact.summary)
         return
+
     st.subheader("✨ Answer")
     st.write(artifact.summary)
-    if artifact.kpis:
+
+    if selected in {"auto", "executive", "kpi", "trend", "chart", "comparison", "insight", "table"} and artifact.kpis:
         cols = st.columns(min(4, len(artifact.kpis)))
         for idx, kpi in enumerate(artifact.kpis[:4]):
             cols[idx].metric(kpi["label"], kpi["value"])
-    if artifact.insights:
+
+    if selected in {"auto", "executive", "insight"} and artifact.insights:
         st.subheader("What matters")
         for insight in artifact.insights:
             if insight["type"] == "anomaly":
@@ -188,7 +193,8 @@ def render_answer(artifact: AnswerArtifact, df: pd.DataFrame | None = None) -> N
                 st.info(insight["text"])
             else:
                 st.success(insight["text"])
-    if artifact.visualization.get("type") in {"bar", "line"} and df is not None:
+
+    if selected in {"auto", "chart", "trend"} and artifact.visualization.get("type") in {"bar", "line"} and df is not None:
         x, y = artifact.visualization["x"], artifact.visualization["y"]
         if x in df.columns and y in df.columns:
             chart_df = df[[x, y]].copy()
@@ -200,14 +206,21 @@ def render_answer(artifact: AnswerArtifact, df: pd.DataFrame | None = None) -> N
                     st.line_chart(chart_df.set_index(x)[y])
                 else:
                     st.bar_chart(chart_df.set_index(x)[y])
-    if artifact.comparisons:
+
+    if selected in {"auto", "comparison"} and artifact.comparisons:
         st.subheader("Comparison")
         st.dataframe(pd.DataFrame(artifact.comparisons), use_container_width=True, hide_index=True)
+
+    if selected in {"auto", "table", "raw"} and df is not None:
+        st.subheader("Data")
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
     with st.expander("Evidence"):
         if artifact.evidence:
             st.json(artifact.evidence)
         else:
             st.info("No structured evidence was attached.")
-    with st.expander("Raw data"):
-        if df is not None:
-            st.dataframe(df, use_container_width=True)
+
+    if selected == "raw":
+        with st.expander("SQL", expanded=False):
+            st.caption("Raw-data view is for audit/debugging. Customer-facing views should use the answer artifact above.")
