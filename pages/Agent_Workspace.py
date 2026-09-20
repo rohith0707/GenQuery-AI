@@ -42,7 +42,7 @@ with right:
     if p["entities"] and p["metrics"]:
         for m in p["metrics"]: dot.append(f'"{p["entities"][0]}" -> "metric:{m}" [label="measures"];')
     if len(p["entities"])>=2:
-        for j in p["join_paths"]: dot.append(f'"{p["entities"][0]}" -> "{p["entities"][-1]}" [label="{j}"];')
+        source=p["entities"][0]; target=p["entities"][-1]
     dot.append("}")
     st.graphviz_chart("\n".join(dot),use_container_width=True)
 
