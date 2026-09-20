@@ -182,3 +182,12 @@ The goal is to make those failure modes measurable and progressively reduce them
 ## License
 
 No license is currently declared. Do not assume the code is licensed for unrestricted reuse.
+
+
+## Agentic Agent Workspace
+
+The current main branch includes an inspectable agentic workflow:
+
+**Question → Adaptive RAG → Semantic Graph → Query Plan IR → Validation → SQL Compiler → Execution → Evidence**
+
+Open **Agent Workspace** from the Streamlit pages to inspect the structured plan, retrieval sources, semantic graph, validation gates, compiled SQL and optional Snowflake execution.
