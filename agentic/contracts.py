@@ -47,4 +47,5 @@ class AgentResult:
     traces: list[AgentTrace] = field(default_factory=list)
     repair_count: int = 0
     evidence: list[dict[str, str]] = field(default_factory=list)
+    cost: dict[str, Any] = field(default_factory=dict)
     def to_dict(self): return asdict(self)
