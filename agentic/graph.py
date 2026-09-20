@@ -9,7 +9,7 @@ class SemanticGraph:
             if not name: continue
             self.nodes.append({"id":name,"label":name,"kind":"table"})
             compact=t.get("compact_schema","")
-            for col in re.findall(r"([A-Za-z_][A-Za-z0-9_]*)\\s+[A-Za-z]",compact):
+            for col in re.findall(r"([A-Za-z_][A-Za-z0-9_]*)\s+[A-Za-z]",compact):
                 self.nodes.append({"id":f"{name}.{col}","label":col,"kind":"column","table":name})
         self._infer_relationships()
     def _infer_relationships(self):
