@@ -8,10 +8,10 @@ class QueryPlanner:
     def plan(self,question,join_paths=None):
         q=question.lower(); metrics=[]
         for term,metric in self.METRIC_TERMS.items():
-            if re.search(r"\\b"+re.escape(term)+r"\\b",q) and metric not in metrics: metrics.append(metric)
+            if re.search(r"\b"+re.escape(term)+r"\b",q) and metric not in metrics: metrics.append(metric)
         entities=[]
         for entity,terms in self.ENTITY_TERMS.items():
-            if any(re.search(r"\\b"+re.escape(t)+r"\\b",q) for t in terms): entities.append(entity)
+            if any(re.search(r"\b"+re.escape(t)+r"\b",q) for t in terms): entities.append(entity)
         if not entities: entities=["business entity"]
         filters=[]
         for city in ("hyderabad","bangalore","bengaluru","mumbai","delhi","chennai"):
