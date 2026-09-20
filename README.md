@@ -182,3 +182,17 @@ The goal is to make those failure modes measurable and progressively reduce them
 ## License
 
 No license is currently declared. Do not assume the code is licensed for unrestricted reuse.
+
+## Agentic Query Workspace
+
+GenQuery now includes an inspectable Agent Workspace that turns the NL→SQL pipeline into structured agent artifacts:
+
+```text
+Question → Adaptive RAG → Semantic Resolution → Query Plan IR
+        → Validation → SQL Compiler → Safety/Cost Gate
+        → Execution → Evidence-backed Result
+```
+
+The workspace exposes the plan, semantic graph, retrieval strategy and validation gates. It deliberately shows structured decisions and evidence rather than private model chain-of-thought.
+
+See `docs/AGENTIC_ARCHITECTURE.md` and open `pages/Agent_Workspace.py` from the Streamlit navigation.
