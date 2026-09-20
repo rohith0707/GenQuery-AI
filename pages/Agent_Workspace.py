@@ -1,55 +1,137 @@
-"""GenQuery Agent Workspace: inspectable planning and semantic reasoning UI."""
+"""Agent Workspace: inspectable agentic NL→SQL workflow."""
+
 import json
+
 import streamlit as st
-from agentic.orchestrator import build_agent_plan
-from agentic.semantic import build_semantic_graph, context_summary
+
+from agentic.engine import AgenticQueryEngine
 
 st.set_page_config(page_title="GenQuery Agent Workspace", page_icon="🧠", layout="wide")
-st.markdown("# 🧠 GenQuery Agent Workspace")
-st.caption("Inspect the agent plan, semantic graph, retrieval strategy and validation gates before execution.")
-question = st.text_area("Business question", value="What was our revenue from enterprise customers in Hyderabad last quarter?", height=90)
-if st.button("▶ Build Agent Plan", type="primary"): st.session_state.agent_plan = build_agent_plan(question).to_dict()
-if "agent_plan" not in st.session_state: st.session_state.agent_plan = build_agent_plan(question).to_dict()
-plan = st.session_state.agent_plan
+st.title("🧠 GenQuery Agent Workspace")
+st.caption("Retrieve → Resolve → Plan → Validate → Compile → Execute → Prove")
+st.page_link("pages/Benchmark_Workspace.py", label="📈 Open Benchmark Workspace")
 
-a,b,c,d = st.columns(4)
-a.metric("Intent", plan["intent"].replace("_"," ").title())
-b.metric("Plan confidence", f"{plan['confidence']:.0%}")
-c.metric("Entities", len(plan["entities"]))
-d.metric("Retrieval agents", len(plan["retrieval"]))
+question = st.text_area(
+    "Business question",
+    value="What was our revenue from enterprise customers in Hyderabad last quarter?",
+    height=90,
+)
+c1, c2 = st.columns([1, 3])
+with c1:
+    analyze = st.button("▶ Analyze", type="primary", use_container_width=True)
+with c2:
+    st.caption(
+        "Structured artifacts and evidence are shown; private model chain-of-thought is never exposed."
+    )
+
+if analyze or "agent_result" not in st.session_state:
+    with st.spinner("Running planner + parallel RAG + semantic validation..."):
+        st.session_state.agent_result = AgenticQueryEngine().analyze(question)
+r = st.session_state.agent_result
+p = r.plan.to_dict()
+
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("Intent", p["intent"].replace("_", " ").title())
+m2.metric("Confidence", f'{p["confidence"]:.0%}')
+m3.metric("Entities", len(p["entities"]))
+m4.metric("RAG sources", len(r.retrieval.sources))
+
 st.divider()
-left,right = st.columns([1.1,1])
+left, right = st.columns([1.05, 1])
 with left:
-    st.subheader("🧩 Agent execution graph")
-    for i, step in enumerate(plan["steps"], 1):
-        st.markdown(f"**{i}. {step['agent']}** — {step['action']}")
-        if step.get("evidence"): st.caption("Retrieval: " + " · ".join(step["evidence"]))
-        if i < len(plan["steps"]): st.markdown("↓")
+    st.subheader("🧩 Agent trace")
+    for i, t in enumerate(r.traces, 1):
+        icon = "🟢" if t.status in ("completed", "cache-hit") else "🔴"
+        st.markdown(f"**{icon} {i}. {t.agent}** — {t.detail}")
+        if t.evidence:
+            st.caption("Evidence: " + " · ".join(t.evidence))
 with right:
-    st.subheader("🔗 Semantic graph")
-    graph = build_semantic_graph(plan)
+    st.subheader("🔗 Semantic view")
     dot = ["digraph G {"]
-    for n in graph["nodes"]: dot.append(chr(34)+n["id"]+chr(34)+" [label="+chr(34)+n["label"].replace(chr(34),chr(39))+chr(34)+"];")
-    for e in graph["edges"]: dot.append(chr(34)+e["source"]+chr(34)+" -> "+chr(34)+e["target"]+chr(34)+" [label="+chr(34)+e["label"]+chr(34)+"];")
+    for e in p["entities"]:
+        dot.append(f'"{e}" [label="{e.title()}"];')
+    for m in p["metrics"]:
+        dot.append(f'"metric:{m}" [label="{m.title()}"];')
+    if p["entities"] and p["metrics"]:
+        for m in p["metrics"]:
+            dot.append(f'"{p["entities"][0]}" -> "metric:{m}" [label="measures"];')
+    if len(p["entities"]) >= 2:
+        source = p["entities"][0]
+        target = p["entities"][-1]
+        for j in p["join_paths"]:
+            dot.append(f'"{source}" -> "{target}" [label="{j}"];')
     dot.append("}")
     st.graphviz_chart("\n".join(dot), use_container_width=True)
 
-r1,r2 = st.columns(2)
-with r1:
-    st.subheader("🔎 Adaptive RAG")
-    for item in plan["retrieval"]: st.markdown("✓ " + item)
-    st.caption("Retrieval is selected by query complexity instead of stuffing the full schema into every prompt.")
-with r2:
-    st.subheader("🧠 What the system understood")
-    st.code(context_summary(plan), language="text")
+st.subheader("🔎 Adaptive RAG")
+for s in r.retrieval.sources:
+    st.write("✓", s["source"], "—", s["detail"])
 
-st.subheader("📋 Query Plan IR")
-ir = {"intent":plan["intent"],"entities":plan["entities"],"metrics":plan["metrics"],"filters":plan["filters"],"time_range":plan["time_range"],"join_paths":plan["join_hints"],"execution_policy":{"read_only":True,"max_result_rows":10000}}
-st.json(ir)
-st.subheader("🛡️ Validation gates")
-checks = [("Semantic completeness", bool(plan["metrics"] or plan["entities"])),("Join path resolved", True),("Read-only execution", True),("Plan exists before SQL", True),("Evidence step configured", True)]
-cols = st.columns(len(checks))
-for col,(label,ok) in zip(cols,checks): col.success("✓ "+label) if ok else col.error("✗ "+label)
-st.subheader("⚙️ SQL compilation boundary")
-st.info("Only the SQL Compiler should turn the validated Query Plan IR into executable SQL. Agents must not bypass this boundary.")
-with st.expander("Developer payload"): st.code(json.dumps(plan, indent=2), language="json")
+a, b = st.columns(2)
+with a:
+    st.subheader("📋 Query Plan IR")
+    st.json(p)
+with b:
+    st.subheader("🛡 Validation gates")
+    for k, v in r.validation.checks.items():
+        (st.success if v else st.error)(("✓ " if v else "✗ ") + k)
+    for e in r.validation.errors:
+        st.error(e)
+    for w in r.validation.warnings:
+        st.warning(w)
+
+st.subheader("⚙️ SQL Compiler")
+if st.button("Compile validated plan → SQL"):
+    try:
+        schema = ""
+        try:
+            from snowflake_client import get_schema_overview
+
+            schema = get_schema_overview() or ""
+        except Exception:
+            pass
+        with st.spinner("Compiling through the existing provider layer..."):
+            st.session_state.agent_result = AgenticQueryEngine().compile(r, schema)
+        r = st.session_state.agent_result
+    except Exception as exc:
+        st.error(str(exc))
+        r = st.session_state.agent_result
+if r.sql:
+    st.code(r.sql, language="sql")
+    if r.cost:
+        cc1, cc2, cc3 = st.columns(3)
+        cc1.metric("Query risk", r.cost.get("risk", "unknown").upper())
+        cc2.metric("Join count", r.cost.get("joins", 0))
+        cc3.metric("Result bound", "Yes" if r.cost.get("has_limit") else "No")
+        if r.cost.get("risk") == "high":
+            st.warning(r.cost.get("recommendation", "Run EXPLAIN before execution."))
+else:
+    st.info("Compile only after semantic validation passes.")
+
+st.subheader("🚀 Execution")
+if r.sql:
+    if st.button("Run SQL in Snowflake"):
+        try:
+            from snowflake_client import SF_PARAMS, run_query
+
+            if not all(SF_PARAMS.get(k) for k in ("user", "password", "account")):
+                st.warning("Snowflake credentials are not configured.")
+            else:
+                with st.spinner("Executing validated SQL..."):
+                    df = run_query(r.sql)
+                st.session_state.agent_result = r
+                st.success(f"Query completed — {len(df)} rows")
+                st.dataframe(df, use_container_width=True)
+        except Exception as exc:
+            st.error(f"Execution failed: {exc}")
+            r.traces.append(type(r.traces[0])("execute", "Execution Agent", "failed", str(exc)))
+else:
+    st.info("Compile the validated plan before execution.")
+
+st.subheader("🔐 Evidence")
+if r.evidence:
+    st.json(r.evidence)
+else:
+    st.info("Evidence is generated after compilation.")
+with st.expander("Developer state"):
+    st.code(json.dumps(r.to_dict(), indent=2), language="json")
