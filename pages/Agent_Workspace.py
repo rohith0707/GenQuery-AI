@@ -78,6 +78,12 @@ if st.button("Compile validated plan → SQL"):
         r=st.session_state.agent_result
 if r.sql:
     st.code(r.sql,language="sql")
+    if r.cost:
+        cc1,cc2,cc3=st.columns(3)
+        cc1.metric("Query risk",r.cost.get("risk","unknown").upper())
+        cc2.metric("Join count",r.cost.get("joins",0))
+        cc3.metric("Result bound","Yes" if r.cost.get("has_limit") else "No")
+        if r.cost.get("risk")=="high": st.warning(r.cost.get("recommendation","Run EXPLAIN before execution."))
 else:
     st.info("Compile only after semantic validation passes.")
 
