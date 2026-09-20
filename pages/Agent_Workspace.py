@@ -14,7 +14,7 @@ plan = st.session_state.agent_plan
 
 a,b,c,d = st.columns(4)
 a.metric("Intent", plan["intent"].replace("_"," ").title())
-b.metric("Plan confidence", f"{plan["confidence"]:.0%}")
+b.metric("Plan confidence", f"{plan['confidence']:.0%}")
 c.metric("Entities", len(plan["entities"]))
 d.metric("Retrieval agents", len(plan["retrieval"]))
 st.divider()
@@ -22,7 +22,7 @@ left,right = st.columns([1.1,1])
 with left:
     st.subheader("🧩 Agent execution graph")
     for i, step in enumerate(plan["steps"], 1):
-        st.markdown(f"**{i}. {step["agent"]}** — {step["action"]}")
+        st.markdown(f"**{i}. {step['agent']}** — {step['action']}")
         if step.get("evidence"): st.caption("Retrieval: " + " · ".join(step["evidence"]))
         if i < len(plan["steps"]): st.markdown("↓")
 with right:
