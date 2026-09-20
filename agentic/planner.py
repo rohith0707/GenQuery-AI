@@ -4,7 +4,7 @@ import re
 from .contracts import QueryPlan
 class QueryPlanner:
     METRIC_TERMS={"revenue":"revenue","sales":"revenue","gmv":"revenue","count":"count","average":"average","avg":"average"}
-    ENTITY_TERMS={"customer":["customer","client","account"],"order":["order","orders","purchase","transaction"],"product":["product","sku","item"],"location":["city","region","location","country"]}
+    ENTITY_TERMS={"customer":["customer","customers","client","account"],"order":["order","orders","purchase","transaction"],"product":["product","sku","item"],"location":["city","region","location","country"]}
     def plan(self,question,join_paths=None):
         q=question.lower(); metrics=[]
         for term,metric in self.METRIC_TERMS.items():
