@@ -52,7 +52,9 @@ This repository is a practical exploration of those engineering boundaries.
 - **Query recovery** — validation and regeneration paths for failed queries
 - **Semantic caching** — reduce repeated inference for similar requests
 - **Telemetry** — provider, latency, cache, execution and feedback signals
-- **Evaluation** — regression methodology for SQL correctness and system behavior
+- **Evaluation** — regression methodology for SQL correctness, answer generation and system behavior
+- **Answer Intelligence** — decision-ready summaries, KPIs, charts, trends, comparisons and insights
+- **Evidence** — customer claims remain linked to structured retrieval/plan/execution artifacts
 - **Snowflake integration** — schema introspection and controlled execution
 
 ## Architecture
@@ -104,7 +106,7 @@ This repository is a practical exploration of those engineering boundaries.
 
 ### Requirements
 
-- Python 3.8+
+- Python 3.10+ (Python 3.11 recommended)
 - Snowflake account with a least-privilege read-only role
 - At least one supported LLM provider, or a local provider such as Ollama
 
@@ -199,7 +201,8 @@ This is an engineering project, not a claim of perfect text-to-SQL accuracy. Kno
 - model output remains probabilistic
 - retrieval errors can propagate into SQL generation
 - SQL validation is necessarily incomplete compared with a full database security boundary
-- query cost is not currently predicted before execution
+- query cost is currently a heuristic before execution rather than Snowflake EXPLAIN-backed
+- answer interpretation is deterministic and deliberately conservative today
 - provider behavior varies across models and versions
 
 The goal is to make those failure modes measurable and progressively reduce them.
@@ -218,23 +221,23 @@ The goal is to make those failure modes measurable and progressively reduce them
 
 ## Latest main commits
 
-Latest main commits now include the benchmark/deployment loop plus customer-answer intelligence:
+Latest main commits now include the benchmark/deployment loop and customer-answer intelligence:
 
 | Commit | Change |
 | --- | --- |
+| 6c36473e | docs: document answer intelligence benchmarks |
+| 68a18aac | docs: document answer intelligence and latest main commits |
+| fecef027 | test: cover answer benchmark metrics |
+| e3074372 | feat: benchmark customer answer artifacts |
+| d818e73f | feat: render customer-facing answer views |
+| 74a332e8 | feat: support multiple answer render views |
+| 23d56e51 | feat: add answer artifact contract |
+| f8e1215c | test: evaluate customer-facing answer artifacts |
+| 95fb6be8 | feat: add customer answer intelligence |
 | 7f033137 | deploy: add container health check |
 | 8bb47801 | ci: run benchmark regression without model dependency |
 | 4781f9bb | feat: link benchmark workspace |
 | 2f302029 | fix: separate static and live benchmark modes |
-| fb65e285 | ci: add pytest dependency |
-| adad6a17 | docs: add benchmark and deployment runbook |
-| 1687f266 | deploy: add Streamlit production container |
-| a590d8b7 | feat: add benchmark workspace |
-| 59b84fab | feat: add live benchmark runner |
-| e3074372 | feat: benchmark customer answer artifacts |
-| d818e73f | feat: render customer-facing answer views |
-| 74a332e8 | feat: support multiple answer render views |
-| 95fb6be8 | feat: add customer answer intelligence |
 
 ## License
 
@@ -245,6 +248,6 @@ No license is currently declared. Do not assume the code is licensed for unrestr
 
 The current main branch includes an inspectable agentic workflow:
 
-**Question → Adaptive RAG → Semantic Graph → Query Plan IR → Validation → SQL Compiler → Execution → Evidence**
+**Question → Adaptive RAG → Semantic Graph → Query Plan IR → Validation → SQL Compiler → Execution → Result Interpretation → Answer Artifact → Evidence**
 
-Open **Agent Workspace** from the Streamlit pages to inspect the structured plan, retrieval sources, semantic graph, validation gates, compiled SQL and optional Snowflake execution.
+Open **Agent Workspace** from the Streamlit pages to inspect the structured plan, retrieval sources, semantic graph, validation gates, compiled SQL, customer-facing answer views and optional raw-data/audit output.
