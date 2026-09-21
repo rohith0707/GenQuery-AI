@@ -2,8 +2,16 @@ name: GenQuery Benchmark Regression
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+      - "*.md"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+      - "*.md"
 jobs:
   benchmark:
     runs-on: ubuntu-latest
@@ -12,6 +20,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
       - run: pip install -r requirements.txt
       - run: python -m pytest -q
       - name: Run deterministic benchmark
